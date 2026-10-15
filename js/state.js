@@ -25,6 +25,7 @@ export const G = {
   stepStarted: 0,
   got: 0,
   chooseOpen: false,
+  chooseMiss: 0,
   talkLeft: [],
   lastGreet: {},
   splashCool: 0,

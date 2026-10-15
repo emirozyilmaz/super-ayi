@@ -98,6 +98,11 @@ function lookAtTarget() {
 }
 
 export function beginStep() {
+  if (step().type === 'land' && !PL.flying) {
+    // A saved game reopened on the landing step: the plane is already parked, so landing is done.
+    S.quest = Math.min(STEPS.length - 1, S.quest + 1);
+    writeSave(S);
+  }
   const st = step();
   G.got = 0;
   G.rideDone = false;
@@ -106,6 +111,7 @@ export function beginStep() {
   G.lastNudge = G.time;
   G.nudges = 0;
   G.chooseOpen = false;
+  G.chooseMiss = 0;
   world.choosePads.forEach((p) => { p.mesh.visible = false; p.shown = false; });
   setHint(null);
   if (st.type === 'talk') {
@@ -285,17 +291,35 @@ export function nextTalk() {
   }
 }
 
+/** Fisher–Yates; the right card must not always sit in the same place. */
+function shuffled(list) {
+  const a = list.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/** Only a first-try answer counts as "chosen" (mastered); after a miss it is just practice. */
+function markAnswer(word, keep) {
+  if (G.chooseMiss === 0) mark(word, 'chosen');
+  if (keep) mark(word, 'kept');
+}
+
 function openChoose(st) {
   say(st.say);
   G.lock = true;
   G.chooseOpen = true;
+  G.chooseMiss = 0;
   $('chooseTitle').textContent = (LINES[st.say] || ['?'])[0];
   const box = $('chooseCards');
   box.innerHTML = '';
-  st.options.forEach((opt) => {
+  shuffled(st.options).forEach((opt) => {
     const b = document.createElement('button');
     b.className = 'card';
     b.type = 'button';
+    b.dataset.word = opt;
     b.innerHTML = `<span class="card-ico">${cardIcon(opt)}</span><span class="card-en" lang="en">${opt}</span>`;
     b.addEventListener('pointerdown', (e) => {
       e.preventDefault();
@@ -304,8 +328,7 @@ function openChoose(st) {
         G.chooseOpen = false;
         b.classList.add('good');
         sfx.collect();
-        if (st.keep) mark(st.word, 'kept');
-        else mark(st.word, 'chosen');
+        markAnswer(st.word, st.keep);
         floatWord(st.word);
         say('great');
         $('choose').classList.add('hidden');
@@ -317,8 +340,14 @@ function openChoose(st) {
         void b.offsetWidth;
         b.classList.add('bad');
         sfx.wrong();
-        const thats = LINES[`thats-${opt}`] ? `thats-${opt}` : 'try-again';
-        say(thats);
+        G.chooseMiss += 1;
+        if (G.chooseMiss >= 2) {
+          // Two misses: show the right card and say the word again, so the child is never stuck.
+          box.querySelector(`.card[data-word="${st.word}"]`)?.classList.add('help');
+          say(st.say);
+        } else {
+          say(LINES[`thats-${opt}`] ? `thats-${opt}` : 'try-again');
+        }
       }
     });
     box.appendChild(b);
@@ -533,12 +562,13 @@ export function interact() {
       if (!p.shown) return;
       if (Math.hypot(PL.x - p.x, PL.z - p.z) < 0.95) {
         if (p.word === 'jump') {
-          mark('jump', 'chosen');
+          markAnswer('jump', false);
           floatWord('jump');
           say('great');
           advance();
         } else if (G.time > (p.cool || 0)) {
           p.cool = G.time + 1.4;
+          G.chooseMiss += 1;
           sfx.wrong();
           say(LINES[`thats-${p.word}`] ? `thats-${p.word}` : 'try-again');
         }

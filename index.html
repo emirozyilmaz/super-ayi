@@ -23,7 +23,9 @@
   .hidden { display: none !important; }
   button { font-family: inherit; cursor: pointer; }
 
-  #load, #menu, #pause, #parent, #shop, #choose, #finale {
+  #gateA { width: 90px; font: inherit; font-size: 24px; font-weight: 800; padding: 6px 10px; border: 3px solid var(--gold); border-radius: 12px; text-align: center; }
+  #gateA.bad { animation: shake .35s; border-color: var(--coral); }
+  #load, #menu, #pause, #parent, #gate, #shop, #choose, #finale {
     position: fixed; inset: 0; z-index: 40;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 14px; padding: 20px;
@@ -153,6 +155,7 @@
   .card-en { font-weight: 900; color: #e23d6d; font-size: 17px; text-transform: uppercase; letter-spacing: .5px; }
   .card.good { border-color: var(--leaf); transform: scale(1.08); }
   .card.bad { animation: shake .35s; }
+  .card.help { border-color: var(--leaf); animation: glowpulse 1s ease-in-out infinite; }
   @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 
   #shopGrid, .hats { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
@@ -379,10 +382,22 @@
   </div>
 </div>
 
+<div id="gate" class="hidden dim">
+  <div class="panel">
+    <h2>Aile girişi</h2>
+    <p class="legend">Devam etmek için soruyu yanıtlayın.</p>
+    <div class="row"><span id="gateQ"></span> = <input id="gateA" type="number" inputmode="numeric" autocomplete="off"></div>
+    <div class="row">
+      <button id="gateOk" class="play" type="button">Gir</button>
+      <button id="gateCancel" class="ghost" type="button">Vazgeç</button>
+    </div>
+  </div>
+</div>
+
 <div id="parent" class="hidden dim">
   <div class="panel">
     <h2>Aile paneli</h2>
-    <p class="legend">Duyuldu · Bulundu · Seçildi · Tekrar</p>
+    <p class="legend">Duyuldu · Bulundu · İlk seferde bildi · Sonra hatırladı</p>
     <div id="parentGrid"></div>
     <label class="row"><input id="togTr" type="checkbox" checked> Türkçe ses</label>
     <label class="row"><input id="togSfx" type="checkbox" checked> Oyun sesleri</label>

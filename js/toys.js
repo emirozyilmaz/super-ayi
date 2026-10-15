@@ -433,6 +433,7 @@ export function tryMountSwing(world, locked) {
       sw.taken = true;
       sw.ridden = 0;
       sw.loops = 0;
+      sw.high = false;
       sw.maxAmp = Math.abs(sw.theta);
       sw.omega = Math.abs(sw.omega) > 0.6 ? sw.omega : 1.3; // a friendly first push
       PL.swinging = sw;

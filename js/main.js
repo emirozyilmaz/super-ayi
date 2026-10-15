@@ -325,11 +325,38 @@ function bindUi() {
     G.paused = false;
     $('pause').classList.add('hidden');
   });
+  // Parent gate: a sum a young child can't do yet keeps the panel (and the reset button) safe.
+  let gateSum = 0;
   $('btnParent').addEventListener('pointerdown', (e) => {
     e.preventDefault();
     G.paused = true;
-    renderParent();
-    $('parent').classList.remove('hidden');
+    const a = 6 + Math.floor(Math.random() * 7);
+    const b = 6 + Math.floor(Math.random() * 7);
+    gateSum = a * b;
+    $('gateQ').textContent = `${a} × ${b}`;
+    $('gateA').value = '';
+    $('gateA').classList.remove('bad');
+    $('gate').classList.remove('hidden');
+    setTimeout(() => $('gateA').focus(), 50);
+  });
+  const gateTry = () => {
+    if (parseInt($('gateA').value, 10) === gateSum) {
+      $('gate').classList.add('hidden');
+      renderParent();
+      $('parent').classList.remove('hidden');
+      return;
+    }
+    const inp = $('gateA');
+    inp.classList.remove('bad');
+    void inp.offsetWidth;
+    inp.classList.add('bad');
+    inp.value = '';
+  };
+  $('gateOk').addEventListener('click', gateTry);
+  $('gateA').addEventListener('keydown', (e) => { if (e.key === 'Enter') gateTry(); });
+  $('gateCancel').addEventListener('click', () => {
+    $('gate').classList.add('hidden');
+    G.paused = false;
   });
   $('btnParentClose').addEventListener('pointerdown', (e) => {
     e.preventDefault();
@@ -338,8 +365,8 @@ function bindUi() {
   });
   $('togTr').addEventListener('change', () => { S.turkish = $('togTr').checked; writeSave(S); });
   $('togSfx').addEventListener('change', () => { S.sfx = $('togSfx').checked; writeSave(S); });
-  $('btnReset').addEventListener('pointerdown', (e) => {
-    e.preventDefault();
+  $('btnReset').addEventListener('click', () => {
+    if (!confirm('Tüm ilerleme, altınlar ve kostümler silinsin mi? Bu geri alınamaz.')) return;
     localStorage.removeItem('superayi_en_v2');
     location.reload();
   });
