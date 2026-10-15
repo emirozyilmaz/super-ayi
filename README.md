@@ -68,7 +68,7 @@ Dere ve gölette yüzülür (köprü kuru kalır); suya girince şıp sesi çık
 
 ## Modeller
 
-Doğa ve hayvanlar Quaternius modelleridir (CC0), Poly Pizza üzerinden alınmıştır. Kahraman ayı bu oyunun kendi modeli: büyük kafa, yürüme, zıplama, sevinme. Plumberry Plains paketindeki Bruno bu ağda indirilemediği için kullanılmadı. Ham model paketleri yeniden dağıtılmaz; oyunun içindeki kopyalar evde oynamak içindir.
+Doğa ve hayvanlar Quaternius modelleridir (CC0), Poly Pizza üzerinden alınmıştır. Kahraman ayı bu oyunun kendi modeli: büyük kafa, yürüme, zıplama, sevinme. Plumberry Plains paketindeki Bruno bu ağda indirilemediği için kullanılmadı. CC0 lisansı serbest paylaşıma izin verir; oyun yalnızca kullandığı modelleri içerir, paketlerin tamamını değil.
 
 Oyun yalnızca `js/assets.js` içindeki `NAMES` listesinde yazan modelleri yükler. Yeni bir model eklerken dosyayı `assets/models/` altına koyup adını bu listeye de ekle.
 
@@ -82,3 +82,11 @@ Oyun yalnızca `js/assets.js` içindeki `NAMES` listesinde yazan modelleri yükl
 ## Eski sürüm
 
 Tek dosyalık önceki oyun `legacy/` klasöründedir. `legacy/index.html` eski 3D denemeyi açar.
+
+## Yayın ve lisanslar
+
+Oyun GitHub Pages'te yayınlanır: https://emirozyilmaz.github.io/super-ayi/ (çevrimdışı kurulum için tablette bu adres açılır). `main` dalına gönderilen her değişiklik birkaç dakika içinde yayına çıkar.
+
+- three.js: MIT lisansı.
+- Doğa ve hayvan modelleri: Quaternius, CC0.
+- Sesler: Microsoft Edge sesli okuma (Aria, Emel) ile üretildi; kişisel, ticari olmayan kullanım içindir.
