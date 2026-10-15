@@ -8,7 +8,7 @@ import { buildWorld, tickWorld } from './world.js';
 import { tickToys } from './toys.js';
 import { bindKeys, updatePlayer, updateCamera } from './player.js';
 import {
-  bindQuest, beginStep, nextTalk, interact, guideTarget, guideMarks,
+  bindQuest, startSession, nextTalk, interact, guideTarget, guideMarks,
   tickQuest, replayInstruction, closeShop, renderParent, starsLabel,
   finaleFree, finaleReplay, resumeQuest,
 } from './quest.js';
@@ -240,7 +240,7 @@ function startGame() {
   $('menu').classList.add('hidden');
   $('hud').classList.remove('hidden');
   $('controls').classList.remove('hidden');
-  beginStep();
+  startSession(new URLSearchParams(location.search).has('review'));
   paintHud();
 }
 

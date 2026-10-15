@@ -1,5 +1,6 @@
-import { LINES } from './lines.js';
+import { LINES, lineWord } from './lines.js';
 import { S } from './state.js';
+import { isKnown } from './save.js';
 
 let seq = 0;
 let playing = false;
@@ -230,7 +231,9 @@ export function say(id, opts) {
   return (async () => {
     try {
       await playOne('en', id, token);
-      if (token !== seq || !S.turkish || S.muted) return token === seq;
+      // A known word is English-only; tapping "listen again" (opts.tr) still brings the Turkish back.
+      const wantTr = S.turkish && (!!(opts && opts.tr) || !isKnown(S, lineWord(id)));
+      if (token !== seq || !wantTr || S.muted) return token === seq;
       await delay(220);
       if (token !== seq) return false;
       await playOne('tr', id, token);

@@ -26,6 +26,8 @@ export const G = {
   got: 0,
   chooseOpen: false,
   chooseMiss: 0,
+  chooseSay: '',
+  review: null,
   talkLeft: [],
   lastGreet: {},
   splashCool: 0,

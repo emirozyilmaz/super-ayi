@@ -3,7 +3,8 @@ import { LESSON } from './lines.js';
 const KEY = 'superayi_en_v2';
 
 function blankWord() {
-  return { heard: false, found: false, chosen: false, kept: false };
+  // streak: first-try right answers in a row; at KNOWN_STREAK the Turkish translation fades out.
+  return { heard: false, found: false, chosen: false, kept: false, streak: 0 };
 }
 
 export function emptySave() {
@@ -21,6 +22,7 @@ export function emptySave() {
     words,
     rescues: 0,
     finished: false,
+    reviewDay: '',
   };
 }
 
@@ -39,6 +41,13 @@ export function loadSave() {
 
 export function writeSave(s) {
   try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) { /* private mode */ }
+}
+
+export const KNOWN_STREAK = 2;
+
+/** The child has picked this word right on the first try often enough to hear it in English only. */
+export function isKnown(s, word) {
+  return !!(word && s.words[word] && s.words[word].streak >= KNOWN_STREAK);
 }
 
 export function masteredCount(s) {

@@ -1,5 +1,5 @@
-import { LINES, LESSON, WORD_TR, HATS, COLORS } from './lines.js';
-import { writeSave, masteredCount } from './save.js';
+import { LINES, LESSON, WORD_TR, HATS, COLORS, categoryOf } from './lines.js';
+import { writeSave, masteredCount, isKnown } from './save.js';
 import { S, G, PL } from './state.js';
 import { say, sfx, hush, canAmbient } from './audio.js';
 import { cheerBear, setHat } from './bear.js';
@@ -16,43 +16,43 @@ export const STEPS = [
   { type: 'jump-practice', say: 'do-jump' },
   { type: 'reach', say: 'follow' },
   { type: 'collect', word: 'red', count: 2, say: 'find-red' },
-  { type: 'choose', word: 'red', say: 'show-red', options: ['red', 'blue', 'yellow'] },
+  { type: 'choose', word: 'red', say: 'show-red' },
   { type: 'collect', word: 'apple', count: 2, say: 'find-apple' },
-  { type: 'choose', word: 'apple', say: 'show-apple', options: ['apple', 'banana', 'yellow'] },
-  { type: 'rescue', index: 0, word: 'red', say: 'magic-red', options: ['red', 'blue', 'yellow'] },
+  { type: 'choose', word: 'apple', say: 'show-apple' },
+  { type: 'rescue', index: 0, word: 'red', say: 'magic-red' },
   { type: 'collect', word: 'blue', count: 2, say: 'find-blue' },
-  { type: 'choose', word: 'blue', say: 'show-blue', options: ['blue', 'red', 'yellow'] },
+  { type: 'choose', word: 'blue', say: 'show-blue' },
   { type: 'collect', word: 'banana', count: 2, say: 'find-banana' },
-  { type: 'choose', word: 'banana', say: 'show-banana', options: ['banana', 'apple', 'red'] },
-  { type: 'rescue', index: 1, word: 'banana', say: 'magic-banana', options: ['banana', 'apple', 'yellow'], keep: true },
+  { type: 'choose', word: 'banana', say: 'show-banana' },
+  { type: 'rescue', index: 1, word: 'banana', say: 'magic-banana', keep: true },
   { type: 'collect', word: 'yellow', count: 2, say: 'find-yellow' },
-  { type: 'choose', word: 'yellow', say: 'show-yellow', options: ['yellow', 'red', 'blue'] },
+  { type: 'choose', word: 'yellow', say: 'show-yellow' },
   { type: 'jump-high', say: 'climb-jump' },
   { type: 'jump-choose', say: 'show-jump' },
-  { type: 'choose', word: 'red', say: 'show-red', options: ['red', 'blue', 'yellow'], keep: true },
-  { type: 'rescue', index: 2, word: 'yellow', say: 'magic-yellow', options: ['yellow', 'red', 'blue'], keep: true },
+  { type: 'choose', word: 'red', say: 'show-red', keep: true },
+  { type: 'rescue', index: 2, word: 'yellow', say: 'magic-yellow', keep: true },
   // Chapter 2 — Colors & Animals in the garden and lagoon!
   { type: 'collect', word: 'green', count: 2, say: 'find-green' },
-  { type: 'choose', word: 'green', say: 'show-green', options: ['green', 'red', 'yellow'] },
+  { type: 'choose', word: 'green', say: 'show-green' },
   { type: 'animal', word: 'cat', say: 'find-cat' },
-  { type: 'choose', word: 'cat', say: 'show-cat', options: ['cat', 'duck', 'frog'] },
+  { type: 'choose', word: 'cat', say: 'show-cat' },
   { type: 'collect', word: 'orange', count: 2, say: 'find-orange' },
-  { type: 'choose', word: 'orange', say: 'show-orange', options: ['orange', 'blue', 'green'] },
+  { type: 'choose', word: 'orange', say: 'show-orange' },
   { type: 'animal', word: 'duck', say: 'find-duck' },
-  { type: 'choose', word: 'duck', say: 'show-duck', options: ['duck', 'cat', 'frog'] },
+  { type: 'choose', word: 'duck', say: 'show-duck' },
   { type: 'collect', word: 'purple', count: 2, say: 'find-purple' },
-  { type: 'choose', word: 'purple', say: 'show-purple', options: ['purple', 'orange', 'yellow'] },
+  { type: 'choose', word: 'purple', say: 'show-purple' },
   { type: 'animal', word: 'frog', say: 'find-frog' },
-  { type: 'choose', word: 'frog', say: 'show-frog', options: ['frog', 'cat', 'duck'] },
+  { type: 'choose', word: 'frog', say: 'show-frog' },
   // Chapter 3 — the Sky Park: slide, swing and the little plane!
   { type: 'ride', ride: 'slide', event: 'slide', word: 'slide', say: 'find-slide' },
-  { type: 'choose', word: 'slide', say: 'show-slide', options: ['slide', 'jump', 'duck'] },
+  { type: 'choose', word: 'slide', say: 'show-slide' },
   { type: 'ride', ride: 'swing', event: 'swing', word: 'swing', say: 'find-swing' },
-  { type: 'choose', word: 'swing', say: 'show-swing', options: ['swing', 'slide', 'cat'] },
+  { type: 'choose', word: 'swing', say: 'show-swing' },
   { type: 'ride', ride: 'plane', event: 'board', word: 'plane', say: 'find-plane', immediate: true },
   { type: 'fly', word: 'plane', count: 5, say: 'fly-rings' },
   { type: 'land', say: 'land-plane' },
-  { type: 'choose', word: 'plane', say: 'show-plane', options: ['plane', 'swing', 'slide'] },
+  { type: 'choose', word: 'plane', say: 'show-plane' },
   { type: 'done', say: 'all-done' },
 ];
 
@@ -195,8 +195,9 @@ export function tickQuest() {
 /** Tapping the mission card repeats what to do. */
 export function replayInstruction() {
   const st = step();
-  if (st.type === 'talk' && G.talkLeft.length) say(G.talkLeft[0]);
-  else if (st.say) say(st.say);
+  if (G.chooseOpen && G.chooseSay) say(G.chooseSay, { tr: true });
+  else if (st.type === 'talk' && G.talkLeft.length) say(G.talkLeft[0], { tr: true });
+  else if (st.say) say(st.say, { tr: true });
 }
 
 function paintHud() {
@@ -323,9 +324,72 @@ function shuffled(list) {
   return a;
 }
 
+/**
+ * The right card plus up to two from the same group. Words the child has already met are
+ * preferred as distractors: telling known words apart is the useful practice.
+ */
+function cardOptions(word) {
+  const met = (w) => S.words[w] && (S.words[w].heard || S.words[w].found);
+  const others = shuffled(categoryOf(word).filter((w) => w !== word))
+    .sort((a, b) => Number(met(b)) - Number(met(a)));
+  return shuffled([word, ...others.slice(0, 2)]);
+}
+
+/*
+ * Daily review: on the first play of each day, a short warm-up of up to three words the child
+ * has already been taught (weakest first) comes before the quest carries on where it left off.
+ */
+const REVIEW_SIZE = 3;
+
+function today() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+
+function weakness(word) {
+  const w = S.words[word];
+  return (w.chosen ? 0 : 2) + (isKnown(S, word) ? 0 : 1);
+}
+
+function reviewWords() {
+  // 'jump' is practised on the star pads, not on cards.
+  const taught = LESSON.filter((w) => w !== 'jump' && S.words[w] && S.words[w].found && LINES[`show-${w}`]);
+  return shuffled(taught).sort((a, b) => weakness(b) - weakness(a)).slice(0, REVIEW_SIZE);
+}
+
+/** Start of a play session: today's review if it is due, then the current quest step. */
+export function startSession(forceReview) {
+  const words = reviewWords();
+  if ((forceReview || S.reviewDay !== today()) && words.length >= 2) {
+    G.review = { words, i: 0 };
+    paintHud();
+    openReview();
+  } else beginStep();
+}
+
+function openReview() {
+  const word = G.review.words[G.review.i];
+  openChoose({ type: 'review', word, say: `show-${word}`, keep: true });
+}
+
+function nextReview() {
+  G.review.i += 1;
+  if (G.review.i < G.review.words.length) { openReview(); return; }
+  G.review = null;
+  S.reviewDay = today();
+  writeSave(S);
+  sfx.star();
+  cheerBear(bear);
+  fx.cheer();
+  beginStep();
+}
+
 /** Only a first-try answer counts as "chosen" (mastered); after a miss it is just practice. */
 function markAnswer(word, keep) {
+  const w = S.words[word];
+  if (w) w.streak = G.chooseMiss === 0 ? (w.streak || 0) + 1 : 0;
   if (G.chooseMiss === 0) mark(word, 'chosen');
+  else writeSave(S);
   if (keep) mark(word, 'kept');
 }
 
@@ -333,11 +397,13 @@ function openChoose(st) {
   say(st.say);
   G.lock = true;
   G.chooseOpen = true;
+  G.chooseSay = st.say;
   G.chooseMiss = 0;
-  $('chooseTitle').textContent = (LINES[st.say] || ['?'])[0];
+  const line = (LINES[st.say] || ['?'])[0];
+  $('chooseTitle').textContent = st.type === 'review' ? `🔁 ${G.review.i + 1}/${G.review.words.length} · ${line}` : line;
   const box = $('chooseCards');
   box.innerHTML = '';
-  shuffled(st.options).forEach((opt) => {
+  cardOptions(st.word).forEach((opt) => {
     const b = document.createElement('button');
     b.className = 'card';
     b.type = 'button';
@@ -356,7 +422,7 @@ function openChoose(st) {
         $('choose').classList.add('hidden');
         G.lock = false;
         if (st.type === 'rescue') popBubble(st.index);
-        later(() => advance(), 700);
+        later(() => (st.type === 'review' ? nextReview() : advance()), 700);
       } else {
         b.classList.remove('bad');
         void b.offsetWidth;
@@ -391,7 +457,7 @@ function popBubble(index) {
 
 function floatWord(word) {
   const el = $('floaty');
-  const tr = S.turkish && WORD_TR[word] ? `<small>${WORD_TR[word]}</small>` : '';
+  const tr = S.turkish && WORD_TR[word] && !isKnown(S, word) ? `<small>${WORD_TR[word]}</small>` : '';
   el.innerHTML = `<span class="ico">${itemIcon(word)}</span>${word.toUpperCase()}${tr}`;
   el.classList.remove('hidden');
   el.classList.remove('go');
@@ -808,7 +874,8 @@ export function renderParent() {
     const row = document.createElement('div');
     row.className = 'prow';
     const dot = (on) => `<span class="${on ? 'on' : ''}">${on ? '●' : '○'}</span>`;
-    row.innerHTML = `<b>${id}</b> <em>${WORD_TR[id]}</em> ${dot(w.heard)}${dot(w.found)}${dot(w.chosen)}${dot(w.kept)}`;
+    const en = isKnown(S, id) ? ' <small class="en" title="Türkçe çeviri artık kendiliğinden çalmıyor">EN</small>' : '';
+    row.innerHTML = `<b>${id}${en}</b> <em>${WORD_TR[id]}</em> ${dot(w.heard)}${dot(w.found)}${dot(w.chosen)}${dot(w.kept)}`;
     grid.appendChild(row);
   });
   $('togTr').checked = !!S.turkish;

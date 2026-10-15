@@ -26,7 +26,13 @@ Bölüm 3 görev sırası: slide (kaydırağa bin) → seç → swing (salınca�
 
 Oyun sonu: üç arkadaş kurtarılınca kelebek Lila'ya götürür. Lila'ya varınca kutlama olur, öğrenilen altı kelime dokununca okunan çıkartmalar olarak gelir. "Dolaş" bahçede serbest oyuna devam eder, "Tekrar oyna" maceraya baştan başlatır. Kurtarılan yavrular ayının arkasından yürür.
 
-İlerleme tarayıcıda `superayi_en_v2` anahtarıyla durur. Aile paneli (👪) kelimelerin duyulduğunu, bulunduğunu, seçildiğini ve tekrar geldiğini gösterir.
+İlerleme tarayıcıda `superayi_en_v2` anahtarıyla durur. Aile paneli (👪, çarpma sorusuyla korunur) her kelime için duyuldu, bulundu, ilk seferde bildi ve sonra hatırladı bilgisini gösterir.
+
+Öğrenme kuralları:
+- Seçim kartları her seferinde karışır; yanlış kartlar hep aynı gruptan gelir (renk, meyve, hayvan, oyuncak). Meyvede yalnızca iki kelime olduğu için iki kart çıkar.
+- Bir kelime yalnızca ilk denemede doğru seçilirse öğrenildi sayılır. İki yanlıştan sonra doğru kart parlar.
+- Üst üste iki kez ilk seferde bilinen kelimenin Türkçesi artık kendiliğinden çalmaz (panelde EN rozeti). Görev kutusuna ya da ses düğmesine dokununca Türkçe yine gelir. Yanlış seçince kelime yeniden Türkçeli olur.
+- Her günün ilk oyununda, daha önce öğretilmiş en zayıf üç kelimeyle kısa bir tekrar turu (🔁) açılır; sonra macera kaldığı yerden sürer. `?review=1` tekrarı zorla açar.
 
 Deneme: `?autostart=1` menüyü atlar. `?step=8` görev numarasından başlar.
 

@@ -121,6 +121,12 @@ export const LINES = {
   right: ['Right!', 'Sağa!'],
 };
 
+/** The lesson word a line is about ("find-red" → "red"), or null. */
+export function lineWord(id) {
+  const w = String(id).replace(/^(find|show|thats|magic|hat)-/, '');
+  return LESSON.includes(w) ? w : null;
+}
+
 export const LESSON = [
   'red', 'blue', 'yellow', 'apple', 'banana', 'jump',
   'green', 'orange', 'purple', 'cat', 'duck', 'frog',
@@ -149,3 +155,18 @@ export const HATS = [
   { id: 'cape', slot: 'back', price: 10, hex: 0xe53935, line: 'hat-cape', icon: '🦸' },
   { id: 'pack', slot: 'back', price: 8, hex: 0x8d6e63, line: 'hat-pack', icon: '🎒' },
 ];
+
+/**
+ * Choose-card groups. Distractors always come from the same group, so the child has to know
+ * the word itself (a colour among fruits could be ruled out without knowing either).
+ */
+export const CATEGORY = {
+  color: ['red', 'blue', 'yellow', 'green', 'orange', 'purple'],
+  fruit: ['apple', 'banana'],
+  animal: ['cat', 'duck', 'frog'],
+  toy: ['slide', 'swing', 'plane'],
+};
+
+export function categoryOf(word) {
+  return Object.values(CATEGORY).find((list) => list.includes(word)) || [word];
+}
