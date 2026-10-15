@@ -103,7 +103,6 @@ LINES = {
     'splash': ('Splash! Swim!', 'Şıp! Yüz!'),
     'nice-hat': ('Nice hat!', 'Güzel şapka!'),
     'pop': ('Pop!', 'Pat!'),
-    'honey': ('Yum!', 'Lezzetli!'),
     'follow': ('Follow the butterfly!', 'Kelebeği takip et!'),
     'over-here': ('Over here!', 'Buraya!'),
     'you-did-it': ('You did it! Hooray!', 'Başardın! Yaşasın!'),

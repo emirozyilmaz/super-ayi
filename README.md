@@ -49,6 +49,15 @@ Dere ve gölette yüzülür (köprü kuru kalır); suya girince şıp sesi çık
 
 Doğa ve hayvanlar Quaternius modelleridir (CC0), Poly Pizza üzerinden alınmıştır. Kahraman ayı bu oyunun kendi modeli: büyük kafa, yürüme, zıplama, sevinme. Plumberry Plains paketindeki Bruno bu ağda indirilemediği için kullanılmadı. Ham model paketleri yeniden dağıtılmaz; oyunun içindeki kopyalar evde oynamak içindir.
 
+Oyun yalnızca `js/assets.js` içindeki `NAMES` listesinde yazan modelleri yükler. Yeni bir model eklerken dosyayı `assets/models/` altına koyup adını bu listeye de ekle.
+
+## Proje yapısı
+
+- `index.html` + `js/`: oyun. three.js `vendor/three/` klasöründen yüklenir; derleme ya da `npm install` gerekmez.
+- `package.json`: yalnızca hangi three.js sürümünün (0.170) kullanıldığını kaydeder. `vendor/three/` güncellenmek istenirse `npm install` ile indirilip oradan kopyalanır.
+- `assets/voice/`: `tools/make_voices.py` ile üretilen sesler. Replik listesi `js/lines.js` ile aynı tutulmalı.
+- Proje git ile takip edilir; her değişiklik geri alınabilir.
+
 ## Eski sürüm
 
 Tek dosyalık önceki oyun `legacy/` klasöründedir. `legacy/index.html` eski 3D denemeyi açar.
