@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Süper Ayı — İngilizce Macerası</title>
+<style>
+  :root {
+    --ink: #3e2a22;
+    --cream: #fff8ef;
+    --coral: #ef6c3a;
+    --coral-d: #c65324;
+    --leaf: #2f9e57;
+    --gold: #f5b942;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; background: #8ec8ea; }
+  body {
+    font-family: "Segoe UI", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
+    color: var(--ink); user-select: none; touch-action: none;
+  }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  .hidden { display: none !important; }
+  button { font-family: inherit; cursor: pointer; }
+
+  #load, #menu, #pause, #parent, #shop, #choose, #finale {
+    position: fixed; inset: 0; z-index: 40;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; padding: 20px;
+  }
+  #load { background: #8ec8ea; z-index: 60; }
+  #menu { background: linear-gradient(rgba(159,214,243,.6), rgba(142,200,234,.15) 45%, rgba(183,227,168,.55)); }
+  .load-track { width: min(280px, 70vw); height: 16px; background: #fff; border-radius: 99px; overflow: hidden; border: 3px solid #fff; }
+  #loadBar { height: 100%; width: 0; background: var(--coral); }
+  h1 { font-size: clamp(34px, 6vw, 64px); color: #fff; letter-spacing: 0.5px; text-align: center;
+    text-shadow: 0 3px 0 #e07a2f, 0 8px 18px rgba(62,42,34,.25); line-height: 0.95; }
+  h1 span { display: block; font-size: 0.42em; color: #fff8e8; text-shadow: 0 2px 0 #d4892a; margin-top: 6px; }
+  .bear-mark { font-size: 72px; filter: drop-shadow(0 8px 0 rgba(0,0,0,.12)); animation: bob 2.2s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(-10px); } }
+  .play {
+    background: var(--coral); color: #fff; border: 0; border-radius: 999px;
+    font-size: 28px; font-weight: 800; padding: 14px 48px;
+    box-shadow: 0 6px 0 var(--coral-d);
+  }
+  .play:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--coral-d); }
+  .fine { color: #fff; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
+
+  #hud { position: fixed; top: calc(10px + env(safe-area-inset-top)); left: 0; right: 0; z-index: 20;
+    display: flex; justify-content: space-between; align-items: flex-start; padding: 0 12px; pointer-events: none; }
+  #mission {
+    position: relative; background: var(--cream); border: 4px solid var(--gold); border-radius: 22px;
+    padding: 8px 12px 6px; min-width: 96px; box-shadow: 0 6px 16px rgba(62,42,34,.15); pointer-events: auto;
+    display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer;
+  }
+  #mission.nudge { animation: wiggle .7s; }
+  @keyframes wiggle { 20% { transform: rotate(-6deg) scale(1.08); } 45% { transform: rotate(5deg) scale(1.08); } 70% { transform: rotate(-3deg); } }
+  #misIcons { display: flex; gap: 6px; }
+  #misIcons .ico { width: clamp(52px, 7.5vw, 76px); height: clamp(52px, 7.5vw, 76px); transition: opacity .25s, filter .25s; }
+  #misIcons .ico svg { width: 100%; height: 100%; display: block; }
+  #misIcons .ico.empty { opacity: .25; filter: grayscale(1); }
+  #misIcons .ico.pop { animation: pop .5s; }
+  @keyframes pop { 40% { transform: scale(1.4); } }
+  #misWord { font-size: clamp(15px, 2.2vw, 20px); font-weight: 900; color: #e23d6d; letter-spacing: 1px; text-transform: uppercase; line-height: 1; }
+  #misWord:empty { display: none; }
+  #misEar {
+    position: absolute; right: -12px; bottom: -12px; width: 30px; height: 30px; border-radius: 50%;
+    background: var(--coral); display: flex; align-items: center; justify-content: center; padding: 5px;
+  }
+  #misEar svg { width: 100%; height: 100%; }
+  #misEar svg path, #chooseSay svg path { fill: #fff; }
+  #misEar svg path + path, #chooseSay svg path + path { fill: none; stroke: #fff; stroke-linecap: round; }
+  .fly { position: fixed; left: 0; top: 0; width: 64px; height: 64px; z-index: 33; pointer-events: none; }
+  .fly svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 4px 6px rgba(0,0,0,.25)); }
+  #hint { position: fixed; z-index: 18; font-size: 60px; pointer-events: none; filter: drop-shadow(0 4px 4px rgba(0,0,0,.3)); }
+  #hint.jump { right: calc(36px + env(safe-area-inset-right)); bottom: calc(-6px + env(safe-area-inset-bottom)); animation: tap 0.9s ease-in-out infinite; }
+  #hint.joy { left: calc(52px + env(safe-area-inset-left)); bottom: calc(20px + env(safe-area-inset-bottom)); animation: drag 1.6s ease-in-out infinite; }
+  @keyframes tap { 50% { transform: translateY(-16px) scale(.92); } }
+  @keyframes drag { 0%, 15% { transform: translate(0, 0); } 55%, 70% { transform: translate(0, -48px); } 100% { transform: translate(0, 0); } }
+  #hudRight { display: flex; gap: 8px; align-items: center; pointer-events: auto; }
+  .pill { background: var(--cream); border-radius: 999px; padding: 6px 10px; font-weight: 900; box-shadow: 0 3px 8px rgba(0,0,0,.12); }
+  .icon {
+    width: 46px; height: 46px; border: 0; border-radius: 14px; background: var(--cream);
+    font-size: 20px; box-shadow: 0 3px 8px rgba(0,0,0,.12);
+  }
+  .icon:active { transform: scale(.94); }
+
+  #controls { position: fixed; inset: 0; z-index: 15; pointer-events: none; }
+  #joy {
+    position: absolute; left: calc(18px + env(safe-area-inset-left)); bottom: calc(18px + env(safe-area-inset-bottom));
+    width: 128px; height: 128px; border-radius: 50%; pointer-events: auto; touch-action: none;
+    background: rgba(255,255,255,.28); border: 3px solid rgba(255,255,255,.7);
+  }
+  #joyKnob {
+    position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; border-radius: 50%;
+    background: rgba(255,255,255,.9); transform: translate(-50%, -50%); pointer-events: none;
+  }
+  #btnJump {
+    position: absolute; right: calc(18px + env(safe-area-inset-right)); bottom: calc(18px + env(safe-area-inset-bottom));
+    width: 96px; height: 96px; border-radius: 50%; border: 3px solid #fff; pointer-events: auto; touch-action: none;
+    background: rgba(79, 195, 247, .85); color: #fff; font-size: 40px; font-weight: 900;
+  }
+  #btnJump:active { background: #efb14a; }
+  #btnJump.pulse { animation: glowpulse 1s ease-in-out infinite; }
+  #btnDive {
+    position: absolute; right: calc(126px + env(safe-area-inset-right)); bottom: calc(24px + env(safe-area-inset-bottom));
+    width: 82px; height: 82px; border-radius: 50%; border: 3px solid #fff; pointer-events: auto; touch-action: none;
+    background: rgba(0, 150, 199, .9); color: #fff; font-size: 34px; font-weight: 900;
+    box-shadow: 0 5px 0 rgba(1, 87, 155, .45);
+    animation: glowpulse 1.4s ease-in-out infinite;
+  }
+  #btnDive:active { transform: scale(.93); background: #0077b6; }
+  @keyframes glowpulse { 50% { transform: scale(1.14); box-shadow: 0 0 0 12px rgba(255,255,255,.55); } }
+
+  #dlg {
+    position: fixed; left: 50%; bottom: calc(128px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+    width: min(600px, 92vw); background: var(--cream); border: 4px solid var(--gold); border-radius: 26px;
+    padding: 12px 14px; z-index: 35; box-shadow: 0 10px 28px rgba(0,0,0,.2);
+    display: flex; align-items: center; gap: 12px;
+  }
+  #dlgFace {
+    flex: none; width: 78px; height: 78px; border-radius: 50%; background: #ffe0ec; border: 3px solid #f48fb1;
+    font-size: 50px; display: flex; align-items: center; justify-content: center; animation: bob 1.6s ease-in-out infinite;
+  }
+  .dlg-body { flex: 1; min-width: 0; }
+  #dlgName { font-weight: 900; color: var(--leaf); letter-spacing: .4px; }
+  #dlgText { font-size: clamp(20px, 3vw, 28px); font-weight: 900; line-height: 1.2; }
+  #dlgTr { color: #8d6e63; font-weight: 700; margin-top: 2px; }
+  #dlgNext {
+    flex: none; width: 64px; height: 64px; border: 0; border-radius: 50%; background: var(--leaf); color: #fff;
+    font-size: 26px; font-weight: 900; box-shadow: 0 4px 0 #1f7a40;
+  }
+
+  .dim { background: rgba(30, 50, 70, .45); }
+  .panel {
+    background: var(--cream); border-radius: 28px; padding: 18px 18px 16px;
+    width: min(640px, 94vw); box-shadow: 0 16px 40px rgba(0,0,0,.28);
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+  }
+  #choose .panel { width: min(820px, 96vw); }
+  #chooseHead { display: flex; align-items: center; gap: 12px; }
+  #chooseSay { width: 62px; height: 62px; border: 0; border-radius: 50%; background: var(--coral); padding: 12px; box-shadow: 0 4px 0 var(--coral-d); }
+  #chooseSay svg { width: 100%; height: 100%; }
+  #chooseTitle { font-size: clamp(18px, 2.6vw, 24px); font-weight: 900; text-align: center; color: #8d6e63; }
+  #chooseCards { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+  .card {
+    width: clamp(130px, 23vw, 220px); height: clamp(150px, 26vw, 240px); border-radius: 26px; border: 5px solid var(--gold);
+    background: #fff; box-shadow: 0 6px 0 rgba(0,0,0,.08); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 4px; transition: transform .15s;
+  }
+  .card:active { transform: scale(.95); }
+  .card-ico { width: 72%; height: 72%; }
+  .card-ico svg { width: 100%; height: 100%; display: block; }
+  .card-en { font-weight: 900; color: #e23d6d; font-size: 17px; text-transform: uppercase; letter-spacing: .5px; }
+  .card.good { border-color: var(--leaf); transform: scale(1.08); }
+  .card.bad { animation: shake .35s; }
+  @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
+  #shopGrid, .hats { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .hat {
+    width: 120px; border: 0; border-radius: 18px; background: #fff; padding: 10px;
+    box-shadow: 0 4px 0 #eadfd2; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .hat i { width: 0; height: 0; border-left: 22px solid transparent; border-right: 22px solid transparent; border-bottom: 36px solid #e23d3d; }
+  .hat.worn { outline: 4px solid var(--leaf); }
+  .hat b { text-transform: uppercase; }
+  #shopClose, .ghost {
+    border: 0; background: #fff; color: var(--coral); border-radius: 999px; font-weight: 900;
+    padding: 10px 22px; box-shadow: 0 4px 0 #eadfd2;
+  }
+
+  #finale .panel { max-width: min(640px, 94vw); }
+  .finale-top { font-size: 64px; animation: bob 1.6s ease-in-out infinite; }
+  #finaleWords { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .sticker {
+    width: 96px; border: 4px solid #ffd54f; border-radius: 20px; background: #fff; padding: 8px 4px;
+    box-shadow: 0 5px 0 #f0c040; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    animation: pop-in .4s ease-out backwards;
+  }
+  .sticker:nth-child(2) { animation-delay: .1s; } .sticker:nth-child(3) { animation-delay: .2s; }
+  .sticker:nth-child(4) { animation-delay: .3s; } .sticker:nth-child(5) { animation-delay: .4s; }
+  .sticker:nth-child(6) { animation-delay: .5s; }
+  .sticker:active { transform: scale(.94); }
+  .sticker .card-ico { width: 64px; height: 64px; display: block; }
+  .sticker .card-ico svg { width: 100%; height: 100%; }
+  .sticker b { text-transform: uppercase; font-size: 15px; }
+  @keyframes pop-in { from { transform: scale(0); } 70% { transform: scale(1.12); } }
+
+  #parentGrid { width: 100%; display: flex; flex-direction: column; gap: 6px; max-height: 46vh; overflow: auto; }
+  .prow { display: flex; gap: 8px; align-items: center; font-weight: 800; background: #fff; border-radius: 12px; padding: 6px 10px; }
+  .prow em { color: #8d6e63; font-style: normal; font-weight: 700; flex: 1; }
+  .prow span { color: #d7ccc8; }
+  .prow span.on { color: #ef8b2c; }
+  .row { display: flex; gap: 16px; align-items: center; font-weight: 800; }
+  #floaty {
+    position: fixed; top: 18%; left: 50%; transform: translateX(-50%); z-index: 32; pointer-events: none;
+    font-size: clamp(28px, 6vw, 52px); font-weight: 900; color: #fff;
+    text-shadow: 0 3px 0 #e23d6d, 0 8px 16px rgba(0,0,0,.25); white-space: nowrap;
+  }
+  #floaty { display: flex; align-items: center; gap: 12px; }
+  #floaty .ico { width: 1.5em; height: 1.5em; }
+  #floaty .ico svg { width: 100%; height: 100%; display: block; }
+  #floaty small { font-size: .45em; align-self: flex-end; margin-bottom: .4em; }
+  #floaty.go { animation: up 1.15s ease-out forwards; }
+  @keyframes up { to { opacity: 0; transform: translateX(-50%) translateY(-70px); } }
+  .legend { font-size: 13px; color: #8d6e63; font-weight: 700; }
+
+  /* Underwater / surface water look — separate “you are in water” experience. */
+  #dive {
+    position: fixed; inset: 0; z-index: 12; pointer-events: none;
+    opacity: 0; transition: opacity .3s ease;
+  }
+  #dive.on { opacity: 1; }
+  #dive.surface { opacity: 0.85; }
+  #dive .dive-tint {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(180deg, rgba(64,210,255,.38) 0%, rgba(12,130,210,.45) 45%, rgba(4,68,140,.68) 100%);
+  }
+  #dive.surface .dive-tint {
+    background:
+      linear-gradient(to top, rgba(20,145,230,.52) 0%, rgba(50,185,250,.22) 28%, transparent 62%);
+  }
+  #dive .dive-rays {
+    position: absolute; inset: -15% -10% 20% -10%;
+    background: repeating-linear-gradient(
+      102deg,
+      rgba(190,250,255,0) 0%,
+      rgba(190,250,255,.22) 6%,
+      rgba(255,255,255,0) 13%
+    );
+    filter: blur(8px);
+    transform-origin: top center;
+    animation: rays 5.5s ease-in-out infinite alternate;
+  }
+  #dive.surface .dive-rays { opacity: 0.25; }
+  @keyframes rays {
+    from { transform: rotate(-3deg) scaleX(1); }
+    to { transform: rotate(3deg) scaleX(1.08); }
+  }
+  #dive .dive-caustic {
+    position: absolute; inset: -20%;
+    background:
+      radial-gradient(ellipse 38% 18% at 22% 28%, rgba(255,255,255,.22), transparent 55%),
+      radial-gradient(ellipse 35% 18% at 72% 52%, rgba(150,245,255,.2), transparent 55%),
+      radial-gradient(ellipse 32% 20% at 46% 78%, rgba(255,255,255,.18), transparent 55%);
+    mix-blend-mode: screen;
+    animation: caustic 5s ease-in-out infinite alternate;
+  }
+  #dive.surface .dive-caustic { opacity: 0.55; animation-duration: 3.5s; }
+  @keyframes caustic {
+    from { transform: translate(0,0) scale(1); }
+    to { transform: translate(-3%, 2%) scale(1.07); }
+  }
+  #dive .dive-vignette {
+    position: absolute; inset: 0;
+    box-shadow: inset 0 0 110px 36px rgba(0,52,115,.62);
+  }
+  #dive.surface .dive-vignette {
+    box-shadow: inset 0 -70px 70px -15px rgba(0,95,175,.45);
+  }
+  #diveBubbles {
+    position: absolute; inset: 0; overflow: hidden;
+  }
+  #diveBubbles i {
+    position: absolute; bottom: -10%;
+    width: 12px; height: 12px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,.75);
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.85), rgba(180,240,255,.2));
+    animation: bub 4.5s linear infinite;
+  }
+  @keyframes bub {
+    0% { transform: translateY(0) scale(.65); opacity: 0; }
+    15% { opacity: .95; }
+    100% { transform: translateY(-112vh) translateX(24px) scale(1.15); opacity: 0; }
+  }
+  #swimWave {
+    position: absolute; top: 0; left: -5%; right: -5%; height: 22px;
+    background: linear-gradient(180deg, rgba(180,248,255,.75), rgba(79,195,247,0));
+    filter: blur(2px);
+    animation: caustic 3s ease-in-out infinite alternate;
+  }
+  #dive.surface #swimWave { display: none; }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+
+<div id="dive" class="hidden" aria-hidden="true">
+  <div class="dive-tint"></div>
+  <div class="dive-rays"></div>
+  <div class="dive-caustic"></div>
+  <div id="diveBubbles"></div>
+  <div id="swimWave"></div>
+  <div class="dive-vignette"></div>
+</div>
+
+<div id="load">
+  <div class="bear-mark">🐻</div>
+  <p id="loadText" class="fine">Bahçe hazırlanıyor…</p>
+  <div class="load-track"><div id="loadBar"></div></div>
+</div>
+
+<div id="menu" class="hidden">
+  <div class="bear-mark">🐻</div>
+  <h1>SÜPER AYI<span>İngilizce Macerası</span></h1>
+  <button id="btnPlay" class="play" type="button">OYNA</button>
+  <p class="fine">Zıpla, topla, arkadaşını kurtar</p>
+</div>
+
+<div id="hud" class="hidden">
+  <div id="mission" title="Tekrar dinle">
+    <div id="misIcons"></div>
+    <div id="misWord" lang="en"></div>
+    <span id="misEar"><svg viewBox="0 0 100 100"><path d="M14 38 H32 L54 18 V82 L32 62 H14Z"/><path d="M66 34 Q76 50 66 66" stroke-width="8" fill="none"/></svg></span>
+  </div>
+  <div id="hudRight">
+    <div class="pill">🪙 <span id="hudCoins">0</span></div>
+    <div class="pill">⭐ <span id="hudStars">0/6</span></div>
+    <div class="pill">🫧 <span id="hudFriends">0/3</span></div>
+    <button id="btnMute" class="icon" type="button">🔊</button>
+    <button id="btnPause" class="icon" type="button">⏸</button>
+    <button id="btnParent" class="icon" type="button" title="Aile">👪</button>
+  </div>
+</div>
+
+<div id="controls" class="hidden">
+  <div id="joy"><div id="joyKnob"></div></div>
+  <button id="btnDive" class="hidden" type="button" title="Dal (Shift / C)">🤿</button>
+  <button id="btnJump" type="button">⬆</button>
+</div>
+<div id="hint" class="hidden">👆</div>
+
+<div id="dlg" class="hidden">
+  <div id="dlgFace">🐰</div>
+  <div class="dlg-body">
+    <div id="dlgName">Lila</div>
+    <div id="dlgText"></div>
+    <div id="dlgTr"></div>
+  </div>
+  <button id="dlgNext" type="button">▶</button>
+</div>
+
+<div id="choose" class="hidden dim">
+  <div class="panel">
+    <div id="chooseHead">
+      <button id="chooseSay" type="button"><svg viewBox="0 0 100 100"><path d="M14 38 H32 L54 18 V82 L32 62 H14Z"/><path d="M66 34 Q76 50 66 66" stroke-width="8" fill="none"/></svg></button>
+      <div id="chooseTitle"></div>
+    </div>
+    <div id="chooseCards"></div>
+  </div>
+</div>
+
+<div id="shop" class="hidden dim">
+  <div class="panel">
+    <h2>Kostüm Dolabı</h2>
+    <div>🪙 <span id="shopCoins">0</span></div>
+    <div id="shopGrid"></div>
+    <button id="shopClose" type="button">Kapat</button>
+  </div>
+</div>
+
+<div id="finale" class="hidden dim">
+  <div class="panel">
+    <div class="finale-top">🌈</div>
+    <h2>Yaşasın!</h2>
+    <div class="row">⭐ <span id="finaleStars"></span></div>
+    <div id="finaleWords"></div>
+    <div class="row">
+      <button id="btnFree" class="play" type="button">🌳 Dolaş</button>
+      <button id="btnReplay" class="ghost" type="button">↺ Tekrar oyna</button>
+    </div>
+  </div>
+</div>
+
+<div id="pause" class="hidden dim">
+  <div class="panel">
+    <h2>Durdu</h2>
+    <button id="btnResume" class="play" type="button">DEVAM</button>
+  </div>
+</div>
+
+<div id="parent" class="hidden dim">
+  <div class="panel">
+    <h2>Aile paneli</h2>
+    <p class="legend">Duyuldu · Bulundu · Seçildi · Tekrar</p>
+    <div id="parentGrid"></div>
+    <label class="row"><input id="togTr" type="checkbox" checked> Türkçe ses</label>
+    <label class="row"><input id="togSfx" type="checkbox" checked> Oyun sesleri</label>
+    <button id="btnReset" class="ghost" type="button">İlerlemeyi sıfırla</button>
+    <button id="btnParentClose" class="play" type="button">Kapat</button>
+  </div>
+</div>
+
+<div id="floaty" class="hidden"></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/three.module.js",
+    "three/addons/": "./vendor/three/addons/"
+  }
+}
+</script>
+<script type="module" src="./js/main.js"></script>
+</body>
+</html>
