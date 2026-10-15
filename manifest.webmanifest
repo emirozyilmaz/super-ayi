@@ -1,0 +1,17 @@
+{
+  "name": "Süper Ayı — İngilizce Macerası",
+  "short_name": "Süper Ayı",
+  "description": "5–6 yaş için reklamsız, internetsiz İngilizce macera oyunu.",
+  "lang": "tr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#8ec8ea",
+  "theme_color": "#8ec8ea",
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "assets/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

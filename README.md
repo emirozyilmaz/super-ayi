@@ -6,6 +6,21 @@
 
 `oyna.bat` dosyasına çift tıkla. Tarayıcı `http://127.0.0.1:8765/` adresini açar. Pencereyi kapatmak oyunu durdurur. Sunucu `tools/serve.py` önbelleği kapatır; dosyalar güncellenince tarayıcı her zaman yenisini yükler.
 
+### Tablette
+
+İki yol var:
+
+1. **Aynı Wi-Fi, bilgisayar açıkken:** `tablet.bat` dosyasına çift tıkla. Pencerede `Tablette ac: http://…:8765/` satırı çıkar; bu adresi tabletin tarayıcısında aç. Windows güvenlik duvarı sorarsa "Özel ağlar" için izin ver. Bu yolda çevrimdışı kopya ve ana ekran simgesi olmaz.
+2. **İnternetsiz, ana ekrandan (PWA):** oyun bir HTTPS adresinde yayınlanır (ör. GitHub Pages ya da Netlify). Tablette bir kez internetle açılır, tarayıcı menüsünden "Ana ekrana ekle" seçilir. Aile panelinde "Çevrimdışı kopya: hazır" yazınca oyun internetsiz de açılır. Güncellemeler, yeni sürüm yayınlandıktan sonraki ikinci açılışta gelir.
+
+Çevrimdışı kopya (`sw.js`) bu bilgisayarın kendi sunucusunda (`oyna.bat`) kapalıdır; denemek için adrese `?pwa=1` eklenir. İkonlar `tools/make_icons.py` ile üretilir.
+
+### Akıcılık
+
+Dünya yüklenince hiç hareket etmeyen süsler (ağaç, kaya, ev, tepe…) malzemelerine ve 32 m'lik bölgelerine göre birkaç büyük parçada birleştirilir (`js/batch.js`); bulutlar, gökyüzü süsleri, çiçek ve altınlar da kendi içlerinde birleşir. Bu, kare başına çizim sayısını yaklaşık %40 azaltır. Hareket eden, gizlenen ya da kodun sonradan okuduğu her şey (`world` nesnesinden ulaşılabilenler) olduğu gibi kalır. Yeni hareketli bir nesne eklerken onu `world` içinde bir alana koymak yeterli; aksi halde birleştirilip donabilir. Karşılaştırmak için `?nobatch`.
+
+Oyunun ilk saniyeleri 40 kare/sn'nin altında akarsa çözünürlük ve gölge kalitesi bir kez kendiliğinden düşürülür. Dokunmatik ekranlarda çözünürlük baştan biraz sınırlıdır.
+
 Yol gösterme: Lila'nın kelebeği hedefe doğru uçar, hedefte renkli ışık sütunu ve yerde halkalar yanar. Görev kutusu yazı yerine resim gösterir; kutuya dokununca görev yeniden söylenir. Çocuk 13 saniye ilerlemezse kamera hedefe döner ve görev tekrar söylenir.
 
 Klavye: WASD veya oklar, boşluk zıpla, farenin sağ tarafını sürükleyince (ya da Q sola / E sağa) kamera döner, M ses, P duraklat. Dokunmatikte solda joystick, sağda zıplama, sağ yarıda sürükleyince kamera. Oklar kamerayı çevirmez; kamera yalnızca çocuk 6 saniye hiçbir şeye dokunmazsa yavaşça hedefe döner.
@@ -59,7 +74,7 @@ Oyun yalnızca `js/assets.js` içindeki `NAMES` listesinde yazan modelleri yükl
 
 ## Proje yapısı
 
-- `index.html` + `js/`: oyun. three.js `vendor/three/` klasöründen yüklenir; derleme ya da `npm install` gerekmez.
+- `index.html` + `js/`: oyun. `sw.js` + `manifest.webmanifest`: çevrimdışı kopya ve ana ekran simgesi. three.js `vendor/three/` klasöründen yüklenir; derleme ya da `npm install` gerekmez.
 - `package.json`: yalnızca hangi three.js sürümünün (0.170) kullanıldığını kaydeder. `vendor/three/` güncellenmek istenirse `npm install` ile indirilip oradan kopyalanır.
 - `assets/voice/`: `tools/make_voices.py` ile üretilen sesler. Replik listesi `js/lines.js` ile aynı tutulmalı.
 - Proje git ile takip edilir; her değişiklik geri alınabilir.

@@ -46,10 +46,16 @@ function fetchBytes(url) {
   return bytes.get(url);
 }
 
-/** Download every bundled clip in the background, a few at a time. */
-export async function preloadVoices() {
+/** Every bundled voice clip. */
+export function voiceUrls() {
   const urls = [];
   Object.keys(LINES).forEach((id) => ['en', 'tr'].forEach((l) => urls.push(`assets/voice/${l}/${id}.mp3`)));
+  return urls;
+}
+
+/** Download every bundled clip in the background, a few at a time. */
+export async function preloadVoices() {
+  const urls = voiceUrls();
   const worker = async () => {
     while (urls.length) await fetchBytes(urls.shift());
   };

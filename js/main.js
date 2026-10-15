@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { S, G, IN, PL } from './state.js';
 import { writeSave } from './save.js';
-import { initAudio, unlockAudio, hush, sfx, preloadVoices } from './audio.js';
+import { initAudio, unlockAudio, hush, sfx, preloadVoices, voiceUrls } from './audio.js';
 import { loadModels } from './assets.js';
 import { makeBear, setHat, updateBear, cheerBear } from './bear.js';
 import { buildWorld, tickWorld } from './world.js';
@@ -14,11 +14,15 @@ import {
 } from './quest.js';
 import { makeGuide, updateGuide, burst } from './guide.js';
 import { itemIcon } from './icons.js';
+import { LINES } from './lines.js';
+import { batchStatic, batchRigid } from './batch.js';
 
 const $ = (id) => document.getElementById(id);
 
 const renderer = new THREE.WebGLRenderer({ canvas: $('cv'), antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75));
+// Touch screens (tablets/phones) are capped a little lower: they have dense screens and small GPUs.
+const TOUCH = matchMedia('(pointer: coarse)').matches;
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, TOUCH ? 1.5 : 1.75));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -209,7 +213,17 @@ async function boot() {
   bindKeys();
   const models = await loadModels((p) => { $('loadBar').style.width = `${Math.round(p * 100)}%`; });
   preloadVoices();
+  const before = [...scene.children];
   world = buildWorld(scene, models);
+  if (!new URLSearchParams(location.search).has('nobatch')) {
+    // Everything the game moves, hides or reads later stays a separate mesh; the rest is merged.
+    const { camBlock, obstacles, platforms, bands, waters, ...moving } = world;
+    world.batchInfo = batchStatic(scene, moving, before);
+    // Things that only move as a whole: merge their parts inside them.
+    let rigid = batchRigid(world.clouds) + batchRigid(world.skyDecor);
+    world.items.forEach((it) => { if (!it.actor && it.mesh) rigid += batchRigid(it.mesh); });
+    world.batchInfo.rigid = rigid;
+  }
   bear = makeBear();
   setHat(bear, S.outfit || S.hat);
   scene.add(bear);
@@ -358,6 +372,7 @@ function bindUi() {
     if (parseInt($('gateA').value, 10) === gateSum) {
       $('gate').classList.add('hidden');
       renderParent();
+      showOfflineInfo();
       $('parent').classList.remove('hidden');
       return;
     }
@@ -509,14 +524,38 @@ function tickWaterLook() {
   }
 }
 
+/*
+ * Auto quality: if the first seconds of play run below ~40 fps, drop to a sharpness of 1 and a
+ * smaller shadow map, once. A parent never has to find a setting for a slow tablet.
+ */
+const perf = { t: 0, frames: 0, done: false };
+function watchSpeed(dt) {
+  if (perf.done || G.paused) return;
+  perf.t += dt;
+  if (perf.t < 1.5) return; // skip start-up hitches
+  perf.frames++;
+  if (perf.t < 6) return;
+  perf.done = true;
+  const avg = (perf.t - 1.5) / perf.frames;
+  if (avg > 0.025) {
+    renderer.setPixelRatio(1);
+    sun.shadow.mapSize.set(1024, 1024);
+    if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
+    resize();
+    G.lowQuality = true;
+  }
+}
+
 let last = performance.now();
 function frame(now) {
   requestAnimationFrame(frame);
-  const dt = Math.min(0.05, (now - last) / 1000);
+  const raw = (now - last) / 1000; // real frame time, for the speed check
+  const dt = Math.min(0.05, raw);
   last = now;
   if (!G.ready) return;
   if (!G.paused) G.time += dt;
   if (G.started && !G.paused) {
+    watchSpeed(Math.min(raw, 0.25));
     moving = updatePlayer(world, dt);
     updateBear(bear, dt, PL, moving);
     tickToys(world, dt, G.time, bear);
@@ -548,6 +587,42 @@ function frame(now) {
     if (world.skyDecor) world.skyDecor.position.set(camera.position.x, 0, camera.position.z);
   }
   renderer.render(scene, camera);
+}
+
+/*
+ * Offline install (PWA). Only on a real web address: on this computer's own server
+ * (oyna.bat) files must always load fresh, so the offline copy is skipped there unless ?pwa=1.
+ */
+const LOCAL = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+if ('serviceWorker' in navigator && (!LOCAL || new URLSearchParams(location.search).has('pwa'))) {
+  navigator.serviceWorker.register('./sw.js').catch(() => { /* plays online only */ });
+  // On the very first visit the voices download before the offline worker takes over, so once it
+  // controls the page every clip is requested again through it (cached ones answer instantly).
+  const warm = async () => {
+    const urls = voiceUrls();
+    const worker = async () => { while (urls.length) await fetch(urls.shift()).catch(() => null); };
+    await Promise.all([worker(), worker(), worker()]);
+  };
+  if (navigator.serviceWorker.controller) warm();
+  else navigator.serviceWorker.addEventListener('controllerchange', warm, { once: true });
+}
+
+/** Family panel line: is the game stored for offline play yet? */
+async function showOfflineInfo() {
+  const el = $('offlineInfo');
+  if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller || !window.caches) {
+    el.textContent = 'Çevrimdışı kopya: yok (yalnızca internetle ya da oyna.bat ile açılır).';
+    return;
+  }
+  let voices = 0;
+  for (const key of await caches.keys()) {
+    const reqs = await (await caches.open(key)).keys();
+    voices += reqs.filter((r) => r.url.includes('/assets/voice/') && !r.url.includes('/custom/')).length;
+  }
+  const total = Object.keys(LINES).length * 2;
+  el.textContent = voices >= total
+    ? 'Çevrimdışı kopya: hazır. İnternet olmadan da açılır.'
+    : `Çevrimdışı kopya: iniyor (${voices}/${total} ses). Oyunu internete bağlıyken biraz açık bırakın.`;
 }
 
 bindUi();

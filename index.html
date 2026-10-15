@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Süper Ayı — İngilizce Macerası</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icons/icon-192.png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#8ec8ea">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Süper Ayı">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
   :root {
     --ink: #3e2a22;
@@ -408,6 +416,7 @@
     <h2>Aile paneli</h2>
     <p class="legend">Duyuldu · Bulundu · İlk seferde bildi · Sonra hatırladı<br>EN: iki kez üst üste ilk seferde bildi, Türkçe çeviri artık kendiliğinden çalmıyor</p>
     <div id="parentGrid"></div>
+    <p id="offlineInfo" class="legend"></p>
     <label class="row"><input id="togTr" type="checkbox" checked> Türkçe ses</label>
     <label class="row"><input id="togSfx" type="checkbox" checked> Oyun sesleri</label>
     <button id="btnReset" class="ghost" type="button">İlerlemeyi sıfırla</button>
