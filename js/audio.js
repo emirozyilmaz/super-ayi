@@ -7,8 +7,26 @@ let ambientUntil = 0;
 let custom = false;
 let ac = null;
 let currentAudio = null;
+let currentSrc = null;
+let stopCurrent = null; // resolves the line that is playing when it gets cut off
+
+/*
+ * Voice clips play through Web Audio: once the first tap unlocks the context, iPad/iPhone
+ * let every later line play (an <audio> started by a timer can be blocked there), and there
+ * is no per-line loading delay. Compressed bytes are cached for all clips; decoded audio is
+ * kept only for the most recent lines so a tablet's memory stays small.
+ */
+const bytes = new Map(); // url -> Promise<ArrayBuffer|null>
+const decoded = new Map(); // url -> AudioBuffer, oldest first
+const DECODED_MAX = 40;
+
+function makeContext() {
+  if (ac) return;
+  try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = null; }
+}
 
 export async function initAudio() {
+  makeContext();
   try {
     const r = await fetch('assets/voice/custom/on.txt', { method: 'HEAD' });
     custom = r.ok;
@@ -16,10 +34,59 @@ export async function initAudio() {
 }
 
 export function unlockAudio() {
-  if (!ac) {
-    try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = null; }
-  }
+  makeContext();
   if (ac && ac.state === 'suspended') ac.resume().catch(() => {});
+}
+
+function fetchBytes(url) {
+  if (!bytes.has(url)) {
+    bytes.set(url, fetch(url).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null));
+  }
+  return bytes.get(url);
+}
+
+/** Download every bundled clip in the background, a few at a time. */
+export async function preloadVoices() {
+  const urls = [];
+  Object.keys(LINES).forEach((id) => ['en', 'tr'].forEach((l) => urls.push(`assets/voice/${l}/${id}.mp3`)));
+  const worker = async () => {
+    while (urls.length) await fetchBytes(urls.shift());
+  };
+  await Promise.all([worker(), worker(), worker(), worker()]);
+}
+
+async function getBuffer(url) {
+  if (decoded.has(url)) {
+    const b = decoded.get(url);
+    decoded.delete(url);
+    decoded.set(url, b);
+    return b;
+  }
+  const raw = await fetchBytes(url);
+  if (!raw || !ac) return null;
+  try {
+    // decodeAudioData detaches its input, so decode a copy and keep the cached bytes.
+    const buf = await ac.decodeAudioData(raw.slice(0));
+    decoded.set(url, buf);
+    if (decoded.size > DECODED_MAX) decoded.delete(decoded.keys().next().value);
+    return buf;
+  } catch (e) { return null; }
+}
+
+function playBuffer(buf) {
+  return new Promise((resolve) => {
+    const src = ac.createBufferSource();
+    src.buffer = buf;
+    src.connect(ac.destination);
+    currentSrc = src;
+    const finish = (ok) => {
+      if (currentSrc === src) { currentSrc = null; stopCurrent = null; }
+      resolve(ok);
+    };
+    stopCurrent = () => finish(false);
+    src.onended = () => finish(true);
+    src.start();
+  });
 }
 
 function tone(f0, f1, dur, type, vol, delay) {
@@ -57,6 +124,11 @@ export const sfx = {
 function delay(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
 function stopPlayback() {
+  if (currentSrc) {
+    try { currentSrc.onended = null; currentSrc.stop(); } catch (e) { /* ignore */ }
+    currentSrc = null;
+  }
+  if (stopCurrent) { const s = stopCurrent; stopCurrent = null; s(); }
   if (currentAudio) {
     try {
       currentAudio.onended = null;
@@ -78,9 +150,10 @@ function playUrl(src) {
     const finish = (ok) => {
       if (done) return;
       done = true;
-      if (currentAudio === a) currentAudio = null;
+      if (currentAudio === a) { currentAudio = null; stopCurrent = null; }
       resolve(ok);
     };
+    stopCurrent = () => finish(false);
     a.onended = () => finish(true);
     a.onerror = () => finish(false);
     const p = a.play();
@@ -107,7 +180,15 @@ async function playFile(base, id, token) {
   // Prefer Edge neural mp3; fall back to older wav if still present.
   for (const ext of ['mp3', 'wav']) {
     if (token !== seq) return true;
-    const ok = await playUrl(`${base}/${id}.${ext}`);
+    const url = `${base}/${id}.${ext}`;
+    if (ac && ac.state === 'running') {
+      const buf = await getBuffer(url);
+      if (token !== seq) return true;
+      if (!buf) continue; // no such file: try the next format
+      await playBuffer(buf);
+      return true;
+    }
+    const ok = await playUrl(url);
     if (ok) return true;
   }
   return false;

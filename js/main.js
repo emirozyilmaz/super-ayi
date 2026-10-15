@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { S, G, IN, PL } from './state.js';
 import { writeSave } from './save.js';
-import { initAudio, unlockAudio, hush, sfx } from './audio.js';
+import { initAudio, unlockAudio, hush, sfx, preloadVoices } from './audio.js';
 import { loadModels } from './assets.js';
 import { makeBear, setHat, updateBear, cheerBear } from './bear.js';
 import { buildWorld, tickWorld } from './world.js';
@@ -10,7 +10,7 @@ import { bindKeys, updatePlayer, updateCamera } from './player.js';
 import {
   bindQuest, beginStep, nextTalk, interact, guideTarget, guideMarks,
   tickQuest, replayInstruction, closeShop, renderParent, starsLabel,
-  finaleFree, finaleReplay,
+  finaleFree, finaleReplay, resumeQuest,
 } from './quest.js';
 import { makeGuide, updateGuide, burst } from './guide.js';
 import { itemIcon } from './icons.js';
@@ -208,6 +208,7 @@ async function boot() {
   await initAudio();
   bindKeys();
   const models = await loadModels((p) => { $('loadBar').style.width = `${Math.round(p * 100)}%`; });
+  preloadVoices();
   world = buildWorld(scene, models);
   bear = makeBear();
   setHat(bear, S.outfit || S.hat);
@@ -241,6 +242,19 @@ function startGame() {
   $('controls').classList.remove('hidden');
   beginStep();
   paintHud();
+}
+
+/** Pause stops the game clock, the quest timers and the voice; panelId is the screen to show. */
+function pauseGame(panelId) {
+  G.paused = true;
+  hush();
+  if (panelId) $(panelId).classList.remove('hidden');
+}
+
+function resumeGame() {
+  $('pause').classList.add('hidden');
+  G.paused = false;
+  resumeQuest();
 }
 
 function bindUi() {
@@ -316,20 +330,21 @@ function bindUi() {
   });
   $('btnPause').addEventListener('pointerdown', (e) => {
     e.preventDefault();
-    if (!G.started) return;
-    G.paused = true;
-    $('pause').classList.remove('hidden');
+    if (G.started) pauseGame('pause');
   });
   $('btnResume').addEventListener('pointerdown', (e) => {
     e.preventDefault();
-    G.paused = false;
-    $('pause').classList.add('hidden');
+    resumeGame();
+  });
+  // Leaving the tab or app (home button, another app) pauses the game and stops the voice.
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && G.started && !G.paused) pauseGame('pause');
   });
   // Parent gate: a sum a young child can't do yet keeps the panel (and the reset button) safe.
   let gateSum = 0;
   $('btnParent').addEventListener('pointerdown', (e) => {
     e.preventDefault();
-    G.paused = true;
+    pauseGame(null);
     const a = 6 + Math.floor(Math.random() * 7);
     const b = 6 + Math.floor(Math.random() * 7);
     gateSum = a * b;
@@ -356,12 +371,12 @@ function bindUi() {
   $('gateA').addEventListener('keydown', (e) => { if (e.key === 'Enter') gateTry(); });
   $('gateCancel').addEventListener('click', () => {
     $('gate').classList.add('hidden');
-    G.paused = false;
+    resumeGame();
   });
   $('btnParentClose').addEventListener('pointerdown', (e) => {
     e.preventDefault();
     $('parent').classList.add('hidden');
-    G.paused = false;
+    resumeGame();
   });
   $('togTr').addEventListener('change', () => { S.turkish = $('togTr').checked; writeSave(S); });
   $('togSfx').addEventListener('change', () => { S.sfx = $('togSfx').checked; writeSave(S); });
@@ -372,9 +387,10 @@ function bindUi() {
   });
   $('shopClose').addEventListener('pointerdown', (e) => { e.preventDefault(); closeShop(); paintHud(); });
   addEventListener('keydown', (e) => {
-    if ((e.code === 'KeyP' || e.code === 'Escape') && G.started && $('dlg').classList.contains('hidden')) {
-      G.paused = !G.paused;
-      $('pause').classList.toggle('hidden', !G.paused);
+    const panelOpen = !$('gate').classList.contains('hidden') || !$('parent').classList.contains('hidden');
+    if ((e.code === 'KeyP' || e.code === 'Escape') && G.started && !panelOpen) {
+      if (G.paused) resumeGame();
+      else pauseGame('pause');
     }
     if (e.code === 'KeyM') {
       S.muted = !S.muted;
@@ -499,7 +515,7 @@ function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
   if (!G.ready) return;
-  G.time += dt;
+  if (!G.paused) G.time += dt;
   if (G.started && !G.paused) {
     moving = updatePlayer(world, dt);
     updateBear(bear, dt, PL, moving);

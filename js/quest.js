@@ -72,6 +72,26 @@ export function bindQuest(w, b, hud, effects) {
 
 function step() { return STEPS[Math.min(S.quest, STEPS.length - 1)]; }
 
+/*
+ * Quest timers run on the game clock (G.time stops while paused), so nothing
+ * advances behind the pause screen. Drained by tickQuest every unpaused frame.
+ */
+const timers = [];
+function later(fn, ms) { timers.push({ at: G.time + ms / 1000, fn }); }
+function runTimers() {
+  for (let i = timers.length - 1; i >= 0; i--) {
+    if (G.time < timers[i].at) continue;
+    const { fn } = timers.splice(i, 1)[0];
+    fn();
+  }
+}
+
+/** After a pause: say again what was cut off, so the child knows where they were. */
+export function resumeQuest() {
+  if (G.talkLeft.length && !$('dlg').classList.contains('hidden')) showTalkLine();
+  else if (G.chooseOpen) replayInstruction();
+}
+
 const WORD_COL = {
   red: COLORS.red, blue: COLORS.blue, yellow: COLORS.yellow,
   green: COLORS.green, orange: COLORS.orange, purple: COLORS.purple,
@@ -138,8 +158,10 @@ export function beginStep() {
 
 /** Called every frame: reminders when the child is stuck, and hint cleanup. */
 export function tickQuest() {
+  if (G.paused) return;
+  runTimers();
   const st = step();
-  if (G.lock || G.paused) return;
+  if (G.lock) return;
   if (G.hint === 'joy' && Math.hypot(PL.x - G.hintX, PL.z - G.hintZ) > 2.5) setHint(null);
   if (st.type === 'ride' && G.rideDone) {
     // The ride counts as soon as it happens; the next step waits until the bear is back on the ground.
@@ -219,7 +241,7 @@ function onToyEvent(name, data) {
     floatWord(st.word);
     say(st.word);
     sfx.collect();
-    if (st.immediate) { setTimeout(() => { if (step() === st) advance(); }, 900); return; }
+    if (st.immediate) { later(() => { if (step() === st) advance(); }, 900); return; }
     G.rideDone = true;
     return;
   }
@@ -228,12 +250,12 @@ function onToyEvent(name, data) {
     if (name === 'ring') {
       G.got = Math.max(G.got, data + 1);
       paintHud();
-      if (G.got >= st.count) setTimeout(() => { if (step() === st) advance(); }, 1700);
+      if (G.got >= st.count) later(() => { if (step() === st) advance(); }, 1700);
     }
     return;
   }
   if (st.type === 'land' && name === 'landed') {
-    setTimeout(() => { if (step() === st) advance(); }, 600);
+    later(() => { if (step() === st) advance(); }, 600);
   }
 }
 
@@ -272,8 +294,8 @@ function showTalkLine() {
   const t0 = performance.now();
   say(id).then(() => {
     const wait = performance.now() - t0 < 400 ? 2600 : 700;
-    setTimeout(() => {
-      if (token === G.talkToken && G.talkLeft.length && !G.paused) nextTalk();
+    later(() => {
+      if (token === G.talkToken && G.talkLeft.length) nextTalk();
     }, wait);
   });
 }
@@ -334,7 +356,7 @@ function openChoose(st) {
         $('choose').classList.add('hidden');
         G.lock = false;
         if (st.type === 'rescue') popBubble(st.index);
-        setTimeout(() => advance(), 700);
+        later(() => advance(), 700);
       } else {
         b.classList.remove('bad');
         void b.offsetWidth;
@@ -525,7 +547,7 @@ export function interact() {
       say(st.word);
       sfx.collect();
       G.lock = true;
-      setTimeout(() => {
+      later(() => {
         G.lock = false;
         if (step().type === 'animal') advance();
       }, 1300);
@@ -613,7 +635,7 @@ function countCollect(it, st) {
     fx.collect(it, G.got - 1);
     if (G.got >= st.count) {
       G.lock = true;
-      setTimeout(() => {
+      later(() => {
         G.lock = false;
         if (step().type === 'collect') advance();
       }, 1400);
@@ -694,7 +716,7 @@ function openFinale() {
   cheerBear(bear);
   fx.finale();
   say('you-did-it').then(() => say('all-done', { soft: true }));
-  setTimeout(() => {
+  later(() => {
     const box = $('finaleWords');
     box.innerHTML = '';
     LESSON.forEach((w) => {
