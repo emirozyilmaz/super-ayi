@@ -31,7 +31,7 @@ Kaydırak: oyun alanında yürüyerek çıkılan rampa var; tepedeki sarı oka u
 
 Salıncak (bölüm 3): oyun alanının yanındaki salıncak setinde kırmızı ya da mavi koltuğun altındaki halkaya yaklaşınca ayı oturur. Çubuğu ileri-geri tutunca (ya da zıplama tuşuna tekrar tekrar basınca) kendi kendini sallar; yeterince hızlanınca takla atar, her takla 1 altın ve "flip" sesi getirir. 🚀 düğmesi ayıyı salıncaktan havaya fırlatır.
 
-Uçak (bölüm 3): oyun alanının yanındaki piste gidilir; uçak ilk iki oyuncak görevi bitince açılır. Parlayan sarı halkaya basınca ayı pilot olur, kalkış otomatik. Çubukla sağa-sola/yukarı-aşağı yönlendirilir (up/down/left/right kelimeleri söylenir), zıplama tuşu 🌀 takla attırır, 🛬 düğmesi otomatik iniş yaptırır. Gökte 1-5 numaralı beş halka sırayla geçilir (one…five), yıldızlar altın verir. İnişte uçak yeniden park yerine döner; kurtarılan yavrular uçarken gizlenir.
+Uçak (bölüm 3): oyun alanının yanındaki piste gidilir; uçak ilk iki oyuncak görevi bitince açılır. Parlayan sarı halkaya basınca ayı pilot olur, kalkış otomatik. Çubukla sağa-sola/yukarı-aşağı yönlendirilir (up/down/left/right kelimeleri söylenir), zıplama tuşu 🌀 takla attırır, 🛬 düğmesi otomatik iniş yaptırır. Gökte 1-5 numaralı beş halka sırayla geçilir (one…five), yıldızlar altın verir. İnişte uçak yeniden park yerine döner, ayı sarı biniş halkasının dışında kalır; yeniden uçmak için halkaya tekrar girilir. Kurtarılan yavrular uçarken gizlenir.
 
 Göl: yüzme alanı büyütüldü (yarıçap 11, merkez 49,-2). Pist gölün kuzey-batısında, ağaç ve sandıklardan arındırılmış. Uçuşta direksiyon yumuşatıldı; çubuk bırakılınca uçak sıradaki halkaya hafifçe yönelir, halkalar büyüktür.
 

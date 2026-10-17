@@ -387,6 +387,7 @@ function buildSky(ctx, toys) {
 export function buildToys(ctx) {
   const toys = {
     swings: [], rings: [], stars: [], fl: null, plane: null, pad: null, lock: null, windsock: null,
+    boardingBlocked: false,
   };
   buildSwingSet(ctx, toys);
   buildAirfield(ctx, toys);
@@ -542,9 +543,12 @@ export function tryBoardPlane(world, locked) {
   const pad = AIRFIELD.pad;
   const d = Math.hypot(PL.x - pad.x, PL.z - pad.z);
   if (d > pad.r) {
+    t.boardingBlocked = false;
     if (d > pad.r + 1.5) t.padCool = false;
     return false;
   }
+  // After landing, the bear must leave the pad before another flight can start.
+  if (t.boardingBlocked) return false;
   if (!planeUnlocked()) {
     if (!t.padCool) {
       t.padCool = true;
@@ -584,8 +588,10 @@ function endFlight(world) {
   const t = world.toys;
   const pad = AIRFIELD.pad;
   t.fl = null;
+  t.boardingBlocked = true;
   PL.flying = null;
-  PL.x = pad.x; PL.z = pad.z + 0.3; PL.y = 0;
+  // Leave the bear's whole body clear of the automatic boarding area.
+  PL.x = pad.x; PL.z = pad.z + pad.r + PL.r + 0.5; PL.y = 0;
   PL.vx = 0; PL.vz = 0; PL.vy = 2;
   PL.onG = false; PL.wasG = false; PL.jumps = 1;
   PL.yaw = Math.PI;
