@@ -119,11 +119,53 @@ export const LINES = {
   down: ['Down!', 'Aşağı!'],
   left: ['Left!', 'Sola!'],
   right: ['Right!', 'Sağa!'],
+  // Chapter 4 — the Balloon Festival: numbers one to five (and colours again).
+  'balloon-party': ["It's a balloon party!", 'Balon partisi!'],
+  'pop-red': ['Pop the red balloon!', 'Kırmızı balonu patlat!'],
+  'pop-blue': ['Pop the blue balloon!', 'Mavi balonu patlat!'],
+  'pop-yellow': ['Pop the yellow balloon!', 'Sarı balonu patlat!'],
+  'pop-green': ['Pop the green balloon!', 'Yeşil balonu patlat!'],
+  'pop-orange': ['Pop the orange balloon!', 'Turuncu balonu patlat!'],
+  'pop-purple': ['Pop the purple balloon!', 'Mor balonu patlat!'],
+  'pop-one': ['Pop one balloon!', 'Bir balon patlat!'],
+  'pop-two': ['Pop two balloons!', 'İki balon patlat!'],
+  'pop-three': ['Pop three balloons!', 'Üç balon patlat!'],
+  'pop-four': ['Pop four balloons!', 'Dört balon patlat!'],
+  'pop-five': ['Pop five balloons!', 'Beş balon patlat!'],
+  'show-one': ['Where is one?', 'Bir nerede?'],
+  'show-two': ['Where is two?', 'İki nerede?'],
+  'show-three': ['Where is three?', 'Üç nerede?'],
+  'show-four': ['Where is four?', 'Dört nerede?'],
+  'show-five': ['Where is five?', 'Beş nerede?'],
+  'thats-one': ["That's one.", 'Bu bir.'],
+  'thats-two': ["That's two.", 'Bu iki.'],
+  'thats-three': ["That's three.", 'Bu üç.'],
+  'thats-four': ["That's four.", 'Bu dört.'],
+  'thats-five': ["That's five.", 'Bu beş.'],
+  // Chapter 5 — Hide and Seek: rabbit, bird, fox and chicken.
+  'hide-seek': ["Let's play hide and seek!", 'Hadi saklambaç oynayalım!'],
+  peekaboo: ['Peekaboo! I see you!', 'Ce-ee! Seni gördüm!'],
+  'where-rabbit': ['Where is the rabbit?', 'Tavşan nerede?'],
+  'where-bird': ['Where is the bird?', 'Kuş nerede?'],
+  'where-fox': ['Where is the fox?', 'Tilki nerede?'],
+  'where-chicken': ['Where is the chicken?', 'Tavuk nerede?'],
+  'show-rabbit': ['Show me the rabbit!', 'Bana tavşanı göster!'],
+  'show-bird': ['Show me the bird!', 'Bana kuşu göster!'],
+  'show-fox': ['Show me the fox!', 'Bana tilkiyi göster!'],
+  'show-chicken': ['Show me the chicken!', 'Bana tavuğu göster!'],
+  'thats-rabbit': ["That's a rabbit.", 'Bu bir tavşan.'],
+  'thats-bird': ["That's a bird.", 'Bu bir kuş.'],
+  'thats-fox': ["That's a fox.", 'Bu bir tilki.'],
+  'thats-chicken': ["That's a chicken.", 'Bu bir tavuk.'],
+  // Sticker album.
+  album: ['My sticker book!', 'Çıkartma albümüm!'],
+  'new-sticker': ['A new sticker!', 'Yeni bir çıkartma!'],
+  'listen-find': ['Listen and find!', 'Dinle ve bul!'],
 };
 
 /** The lesson word a line is about ("find-red" → "red"), or null. */
 export function lineWord(id) {
-  const w = String(id).replace(/^(find|show|thats|magic|hat)-/, '');
+  const w = String(id).replace(/^(find|show|thats|magic|hat|pop|where)-/, '');
   return LESSON.includes(w) ? w : null;
 }
 
@@ -131,6 +173,8 @@ export const LESSON = [
   'red', 'blue', 'yellow', 'apple', 'banana', 'jump',
   'green', 'orange', 'purple', 'cat', 'duck', 'frog',
   'slide', 'swing', 'plane',
+  'one', 'two', 'three', 'four', 'five',
+  'rabbit', 'bird', 'fox', 'chicken',
 ];
 
 export const WORD_TR = {
@@ -139,6 +183,7 @@ export const WORD_TR = {
   cat: 'kedi', rabbit: 'tavşan', bird: 'kuş', duck: 'ördek', frog: 'kurbağa',
   fox: 'tilki', chicken: 'tavuk',
   slide: 'kaydırak', swing: 'salıncak', plane: 'uçak',
+  one: 'bir', two: 'iki', three: 'üç', four: 'dört', five: 'beş',
 };
 
 export const COLORS = {
@@ -163,9 +208,20 @@ export const HATS = [
 export const CATEGORY = {
   color: ['red', 'blue', 'yellow', 'green', 'orange', 'purple'],
   fruit: ['apple', 'banana'],
-  animal: ['cat', 'duck', 'frog'],
+  animal: ['cat', 'duck', 'frog', 'rabbit', 'bird', 'fox', 'chicken'],
   toy: ['slide', 'swing', 'plane'],
+  number: ['one', 'two', 'three', 'four', 'five'],
 };
+
+/** Album pages: title and the words on each page, in teaching order. */
+export const ALBUM_PAGES = [
+  { id: 'color', title: 'Renkler', icon: '🎨' },
+  { id: 'fruit', title: 'Meyveler', icon: '🍎' },
+  { id: 'animal', title: 'Hayvanlar', icon: '🐾' },
+  { id: 'toy', title: 'Oyun parkı', icon: '🛝' },
+  { id: 'number', title: 'Sayılar', icon: '🔢' },
+  { id: 'move', title: 'Hareket', icon: '⭐', words: ['jump'] },
+];
 
 export function categoryOf(word) {
   return Object.values(CATEGORY).find((list) => list.includes(word)) || [word];

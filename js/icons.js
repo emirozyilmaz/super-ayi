@@ -155,13 +155,70 @@ export const ringSvg = (on = true) => svg(
   + `<circle cx="50" cy="50" r="34" fill="none" stroke="${on ? '#fff59d' : '#eceff1'}" stroke-width="4" stroke-dasharray="30 184" transform="rotate(-70 50 50)"/>`,
 );
 
+export const foxSvg = () => svg(
+  '<path d="M18 48 L14 10 L40 30 Z" fill="#ff7a1f" stroke="#bf4a00" stroke-width="3" stroke-linejoin="round"/>'
+  + '<path d="M82 48 L86 10 L60 30 Z" fill="#ff7a1f" stroke="#bf4a00" stroke-width="3" stroke-linejoin="round"/>'
+  + '<path d="M20 20 L36 32 L24 40 Z" fill="#3b2a22"/><path d="M80 20 L64 32 L76 40 Z" fill="#3b2a22"/>'
+  + '<path d="M14 42 Q16 26 50 26 Q84 26 86 42 Q86 64 50 88 Q14 64 14 42 Z" fill="#ff7a1f" stroke="#bf4a00" stroke-width="3" stroke-linejoin="round"/>'
+  + '<path d="M22 50 Q36 52 50 72 Q64 52 78 50 Q72 70 50 88 Q28 70 22 50 Z" fill="#fff6ea"/>'
+  + '<circle cx="37" cy="48" r="5" fill="#24160f"/><circle cx="63" cy="48" r="5" fill="#24160f"/>'
+  + '<circle cx="38.5" cy="46.5" r="1.6" fill="#fff"/><circle cx="64.5" cy="46.5" r="1.6" fill="#fff"/>'
+  + '<ellipse cx="50" cy="80" rx="6" ry="4.5" fill="#24160f"/>',
+);
+
+export const chickenSvg = () => svg(
+  '<path d="M40 18 Q44 6 50 14 Q54 4 60 14 Q66 8 66 22 Z" fill="#ff3b3b"/>'
+  + '<ellipse cx="50" cy="62" rx="32" ry="28" fill="#fffaf0" stroke="#bdb6a8" stroke-width="3"/>'
+  + '<circle cx="52" cy="38" r="20" fill="#fffaf0" stroke="#bdb6a8" stroke-width="3"/>'
+  + '<polygon points="70,38 86,43 70,48" fill="#ffae00" stroke="#e08a00" stroke-width="2" stroke-linejoin="round"/>'
+  + '<path d="M68 50 Q74 58 66 60 Q62 54 68 50 Z" fill="#ff3b3b"/>'
+  + '<circle cx="58" cy="34" r="4.5" fill="#24160f"/><circle cx="59.5" cy="32.5" r="1.4" fill="#fff"/>'
+  + '<path d="M26 60 Q40 50 50 66 Q38 76 26 60 Z" fill="#efe6d4"/>'
+  + '<path d="M42 88 V96 M58 88 V96" stroke="#ffae00" stroke-width="4" stroke-linecap="round"/>',
+);
+
+/** A balloon on a string; `color` is a 0xRRGGBB number. */
+export function balloonSvg(color, on = true) {
+  const c = on ? hex(color) : '#cfd8dc';
+  return svg(
+    `<path d="M50 70 Q44 82 52 90 Q58 96 50 99" stroke="#8d8d8d" stroke-width="2.5" fill="none"/>`
+    + `<ellipse cx="50" cy="38" rx="27" ry="32" fill="${c}"/>`
+    + `<polygon points="45,70 55,70 50,64" fill="${c}"/>`
+    + '<ellipse cx="39" cy="26" rx="7" ry="11" fill="#fff" opacity=".45" transform="rotate(20 39 26)"/>',
+  );
+}
+
+/**
+ * Number card: the digit with that many dots under it, so it reads without knowing digits.
+ * One colour for every number, so no number gets tied to a colour word.
+ */
+export function numberSvg(n) {
+  const col = '#ef6c3a';
+  const xs = { 1: [50], 2: [38, 62], 3: [26, 50, 74], 4: [20, 40, 60, 80], 5: [14, 32, 50, 68, 86] }[n] || [];
+  const dots = xs.map((x) => `<circle cx="${x}" cy="86" r="7.5" fill="${col}"/>`).join('');
+  return svg(
+    `<text x="50" y="66" text-anchor="middle" font-family="Segoe UI, Arial Rounded MT Bold, Arial, sans-serif" font-size="66" font-weight="900" fill="${col}" stroke="#fff" stroke-width="3" paint-order="stroke">${n}</text>`
+    + dots,
+  );
+}
+
+/** A leafy bush with a question mark: "someone is hiding". */
+export const hideSvg = () => svg(
+  '<circle cx="30" cy="66" r="22" fill="#4caf50"/><circle cx="70" cy="66" r="22" fill="#4caf50"/>'
+  + '<circle cx="50" cy="52" r="26" fill="#66bb6a"/><ellipse cx="50" cy="86" rx="40" ry="8" fill="#388e3c"/>'
+  + '<text x="50" y="66" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="40" font-weight="900" fill="#fff">?</text>',
+);
+
+export const NUMBER_WORDS = ['one', 'two', 'three', 'four', 'five'];
+
 const ANIMAL_SVG = {
-  cat: catSvg, duck: duckSvg, frog: frogSvg, rabbit: rabbitSvg, bird: birdSvg,
+  cat: catSvg, duck: duckSvg, frog: frogSvg, rabbit: rabbitSvg, bird: birdSvg, fox: foxSvg, chicken: chickenSvg,
 };
 const TOY_SVG = { slide: slideSvg, swing: swingSvg, plane: planeSvg };
 
 /** Picture of a thing to find in the world. */
 export function itemIcon(word) {
+  if (NUMBER_WORDS.includes(word)) return numberSvg(NUMBER_WORDS.indexOf(word) + 1);
   if (word === 'apple') return appleSvg();
   if (word === 'banana') return bananaSvg();
   if (word === 'jump') return starSvg();
@@ -173,6 +230,7 @@ export function itemIcon(word) {
 
 /** Picture used on a choose card: colors become paint blobs. */
 export function cardIcon(word) {
+  if (NUMBER_WORDS.includes(word)) return numberSvg(NUMBER_WORDS.indexOf(word) + 1);
   if (word === 'apple') return appleSvg();
   if (word === 'banana') return bananaSvg();
   if (word === 'jump') return starSvg();

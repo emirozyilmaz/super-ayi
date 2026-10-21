@@ -15,7 +15,7 @@ const CORE = [
   './', './index.html', './manifest.webmanifest',
   './js/main.js', './js/state.js', './js/save.js', './js/audio.js', './js/assets.js', './js/batch.js',
   './js/bear.js', './js/world.js', './js/toys.js', './js/player.js', './js/quest.js', './js/guide.js',
-  './js/icons.js', './js/lines.js', './js/props.js',
+  './js/icons.js', './js/lines.js', './js/props.js', './js/balloons.js', './js/hide.js', './js/spots.js', './js/album.js',
   './vendor/three/three.module.js',
   './vendor/three/addons/loaders/GLTFLoader.js',
   './vendor/three/addons/utils/BufferGeometryUtils.js',

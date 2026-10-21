@@ -1,6 +1,9 @@
 import { LESSON } from './lines.js';
 
 const KEY = 'superayi_en_v2';
+// 2: chapters 4 (balloons, numbers) and 5 (hide and seek) were added after step 38.
+const CONTENT_VERSION = 2;
+const NEW_CHAPTERS_STEP = 39;
 
 function blankWord() {
   // streak: first-try right answers in a row; at KNOWN_STREAK the Turkish translation fades out.
@@ -23,6 +26,8 @@ export function emptySave() {
     rescues: 0,
     finished: false,
     reviewDay: '',
+    albumSeen: [],
+    contentVersion: CONTENT_VERSION,
   };
 }
 
@@ -35,6 +40,13 @@ export function loadSave() {
     LESSON.forEach((id) => { s.words[id] = Object.assign(blankWord(), s.words[id]); });
     if (!Array.isArray(s.hats)) s.hats = [];
     s.outfit = Object.assign({ hat: s.hat || null, eyes: null, back: null }, raw.outfit || {});
+    if (!Array.isArray(s.albumSeen)) s.albumSeen = [];
+    if (raw.quest !== undefined && !raw.contentVersion) {
+      // Saved before chapters 4–5 existed: a finished game carries on with the new chapters
+      // (step 39 was the old ending and is now the first balloon step).
+      if (raw.finished) { s.finished = false; s.quest = NEW_CHAPTERS_STEP; }
+      s.contentVersion = CONTENT_VERSION;
+    }
   } catch (e) { /* keep defaults */ }
   return s;
 }

@@ -7,7 +7,12 @@ import { dropFruit, faceAnimal, placeAnimal, sendAnimal } from './world.js';
 import { AIRFIELD } from './toys.js';
 import {
   itemIcon, cardIcon, jumpSvg, archSvg, bubbleSvg, heartSvg, earSvg, starSvg, ringSvg, planeSvg,
+  balloonSvg, hideSvg, NUMBER_WORDS,
 } from './icons.js';
+import { placeBalloons, addBalloon, releaseBalloons, aliveBalloons } from './balloons.js';
+import { hideAnimal, revealAnimal } from './hide.js';
+import { freeSpot } from './spots.js';
+import { unlockStickers } from './album.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -53,6 +58,30 @@ export const STEPS = [
   { type: 'fly', word: 'plane', count: 5, say: 'fly-rings' },
   { type: 'land', say: 'land-plane' },
   { type: 'choose', word: 'plane', say: 'show-plane' },
+  // Chapter 4 — the Balloon Festival: numbers one to five, and colours in a new place.
+  // (Step 39 is the first new step; save.js moves finished games here.)
+  { type: 'balloons', mode: 'color', word: 'red', say: 'pop-red', intro: 'balloon-party' },
+  { type: 'balloons', mode: 'count', count: 1, word: 'one', say: 'pop-one' },
+  { type: 'choose', word: 'one', say: 'show-one' },
+  { type: 'balloons', mode: 'count', count: 2, word: 'two', say: 'pop-two' },
+  { type: 'choose', word: 'two', say: 'show-two' },
+  { type: 'balloons', mode: 'color', word: 'blue', say: 'pop-blue' },
+  { type: 'balloons', mode: 'count', count: 3, word: 'three', say: 'pop-three' },
+  { type: 'choose', word: 'three', say: 'show-three' },
+  { type: 'balloons', mode: 'count', count: 4, word: 'four', say: 'pop-four' },
+  { type: 'choose', word: 'four', say: 'show-four' },
+  { type: 'balloons', mode: 'color', word: 'purple', say: 'pop-purple' },
+  { type: 'balloons', mode: 'count', count: 5, word: 'five', say: 'pop-five' },
+  { type: 'choose', word: 'five', say: 'show-five' },
+  // Chapter 5 — Hide and Seek: four new animal friends.
+  { type: 'hide', word: 'rabbit', say: 'where-rabbit', intro: 'hide-seek' },
+  { type: 'choose', word: 'rabbit', say: 'show-rabbit' },
+  { type: 'hide', word: 'bird', say: 'where-bird' },
+  { type: 'choose', word: 'bird', say: 'show-bird' },
+  { type: 'hide', word: 'fox', say: 'where-fox' },
+  { type: 'choose', word: 'fox', say: 'show-fox' },
+  { type: 'hide', word: 'chicken', say: 'where-chicken' },
+  { type: 'choose', word: 'chicken', say: 'show-chicken' },
   { type: 'done', say: 'all-done' },
 ];
 
@@ -68,6 +97,7 @@ export function bindQuest(w, b, hud, effects) {
   G.onEvent = onToyEvent;
   G.planeStep = STEPS.findIndex((s) => s.type === 'ride' && s.ride === 'plane');
   if (effects) fx = effects;
+  if (world.balloons) world.balloons.onPop = balloonPopped;
 }
 
 function step() { return STEPS[Math.min(S.quest, STEPS.length - 1)]; }
@@ -98,8 +128,11 @@ const WORD_COL = {
   apple: COLORS.red, banana: COLORS.yellow, jump: 0xffc107,
   cat: 0xffb74d, duck: 0xffe082, frog: 0x66bb6a,
   slide: 0xff7043, swing: 0xe53935, plane: 0x4fc3f7,
+  rabbit: 0xf8bbd0, bird: 0x4fc3f7, fox: 0xff7a1f, chicken: 0xff3b3b,
+  one: 0xe53935, two: 0xfb8c00, three: 0x43a047, four: 0x1e88e5, five: 0x8e24aa,
 };
-const ROAMING = ['jump-practice', 'reach', 'collect', 'rescue', 'jump-high', 'jump-choose', 'animal', 'ride', 'fly', 'land'];
+const ROAMING = ['jump-practice', 'reach', 'collect', 'rescue', 'jump-high', 'jump-choose', 'animal', 'ride', 'fly', 'land', 'balloons', 'hide'];
+const BALLOON_COLS = ['red', 'orange', 'yellow', 'green', 'blue', 'purple'];
 
 function setHint(kind) {
   G.hint = kind;
@@ -145,7 +178,10 @@ export function beginStep() {
     return;
   }
   if (st.type === 'reach' && world.lila.x < 12) sendAnimal(world.lila, 17, 1.2, 3.4);
+  if (st.type === 'balloons') startBalloons(st);
+  if (st.type === 'hide') startHide(st);
   if (st.type === 'choose') openChoose(st);
+  else if (st.intro) say(st.intro).then((ok) => { if (ok && step() === st) say(st.say); });
   else if (st.say) say(st.say);
   if (st.type === 'jump-choose') {
     world.choosePads.forEach((p) => { p.mesh.visible = true; p.shown = true; });
@@ -222,7 +258,16 @@ function paintHud() {
     for (let i = 0; i < st.count; i++) icons.push({ svg: ringSvg(i < G.got), on: i < G.got });
     word = 'fly';
   } else if (st.type === 'land') { icons = [{ svg: planeSvg(), on: true }]; word = 'land'; }
-  else if (st.type === 'done') { icons = [{ svg: heartSvg(), on: true }]; word = 'yay'; }
+  else if (st.type === 'balloons' && st.mode === 'color') {
+    icons = [{ svg: balloonSvg(COLORS[st.word], G.got > 0), on: true }];
+    word = st.word;
+  } else if (st.type === 'balloons') {
+    for (let i = 0; i < st.count; i++) icons.push({ svg: balloonSvg(COLORS[BALLOON_COLS[i]], i < G.got), on: i < G.got });
+    word = st.word;
+  } else if (st.type === 'hide') {
+    icons = [{ svg: G.hideFound ? itemIcon(st.word) : hideSvg(), on: true }];
+    word = st.word;
+  } else if (st.type === 'done') { icons = [{ svg: heartSvg(), on: true }]; word = 'yay'; }
   $('misIcons').innerHTML = icons
     .map((c, i) => `<span class="ico${c.on ? '' : ' empty'}" data-i="${i}">${c.svg}</span>`)
     .join('');
@@ -263,10 +308,11 @@ function onToyEvent(name, data) {
 function mark(word, field) {
   if (!LESSON.includes(word)) return;
   const w = S.words[word];
-  if (field === 'kept') w.kept = true;
-  else w[field] = true;
-  if (field === 'chosen' && w.chosen) { /* already set */ }
+  const before = mastered(word);
+  w[field] = true;
   writeSave(S);
+  // Found and picked right on the first try: the word's sticker goes into the album.
+  if (!before && mastered(word)) unlockStickers([word]);
 }
 
 function advance() {
@@ -386,9 +432,17 @@ function nextReview() {
 
 /** Only a first-try answer counts as "chosen" (mastered); after a miss it is just practice. */
 function markAnswer(word, keep) {
+  recordAnswer(word, G.chooseMiss === 0, keep);
+}
+
+const mastered = (word) => !!(S.words[word] && S.words[word].found && S.words[word].chosen);
+
+/** One answer to a word question (cards, star pads, album quiz). A new sticker is announced. */
+export function recordAnswer(word, firstTry, keep) {
   const w = S.words[word];
-  if (w) w.streak = G.chooseMiss === 0 ? (w.streak || 0) + 1 : 0;
-  if (G.chooseMiss === 0) mark(word, 'chosen');
+  if (!w) return;
+  w.streak = firstTry ? (w.streak || 0) + 1 : 0;
+  if (firstTry) mark(word, 'chosen');
   else writeSave(S);
   if (keep) mark(word, 'kept');
 }
@@ -473,6 +527,87 @@ function wantedItems(word) {
     .map((e) => e.it);
 }
 
+/* ---- Chapter 4: balloons ---------------------------------------------------------------- */
+
+function startBalloons(st) {
+  G.stepDone = false;
+  let words;
+  if (st.mode === 'color') {
+    const others = shuffled(BALLOON_COLS.filter((c) => c !== st.word)).slice(0, 3);
+    words = shuffled([st.word, ...others]);
+  } else {
+    words = Array.from({ length: st.count + 2 }, () => BALLOON_COLS[Math.floor(Math.random() * 6)]);
+  }
+  placeBalloons(world.balloons, world, PL, words);
+}
+
+function balloonPopped(b) {
+  const st = step();
+  sfx.pop();
+  G.burst(b.x, b.y, b.z, COLORS[b.word]);
+  if (st.type !== 'balloons' || G.stepDone) return;
+  G.lastNudge = G.time;
+  if (st.mode === 'color') {
+    if (b.word !== st.word) {
+      sfx.wrong();
+      say(LINES[`thats-${b.word}`] ? `thats-${b.word}` : 'try-again');
+      later(() => { if (step() === st && !G.stepDone) addBalloon(world.balloons, world, PL, b.word); }, 1500);
+      return;
+    }
+    G.got = 1;
+    finishBalloons(st, st.word);
+    say(st.word);
+    return;
+  }
+  // Count mode: every pop is counted out loud.
+  G.got += 1;
+  const n = NUMBER_WORDS[G.got - 1];
+  if (n) {
+    mark(n, 'heard');
+    say(n);
+  }
+  paintHud();
+  if (G.got >= st.count) finishBalloons(st, st.word);
+}
+
+function finishBalloons(st, word) {
+  G.stepDone = true;
+  mark(word, 'heard');
+  mark(word, 'found');
+  floatWord(word);
+  sfx.collect();
+  paintHud();
+  later(() => {
+    releaseBalloons(world.balloons);
+    if (step() === st) advance();
+  }, 1500);
+}
+
+/* ---- Chapter 5: hide and seek ------------------------------------------------------------ */
+
+function startHide(st) {
+  G.hideFound = false;
+  G.hideSpot = null;
+  const an = world.animals.find((a) => a.word === st.word && !a.npc);
+  if (!an || !world.hideBush) return;
+  const spot = freeSpot(world, PL, 10, 20, 1.6) || freeSpot(world, PL, 6, 26, 1.0) || { x: an.x, z: an.z };
+  G.hideSpot = spot;
+  hideAnimal(world.hideBush, an, spot, PL);
+}
+
+function foundHidden(st) {
+  G.hideFound = true;
+  revealAnimal(world.hideBush);
+  mark(st.word, 'heard');
+  mark(st.word, 'found');
+  floatWord(st.word);
+  sfx.collect();
+  fx.cheer();
+  paintHud();
+  say('peekaboo').then((ok) => { if (ok && step() === st) say(st.word); });
+  later(() => { if (step() === st) advance(); }, 3200);
+}
+
 /** Where the butterfly should lead: { x, z, y, gy, color } or null. */
 export function guideTarget() {
   const st = step();
@@ -517,6 +652,17 @@ export function guideTarget() {
     return { x: r.x, z: r.z, y: r.y - 1.4, gy: r.y - 4.5, color: 0xffd54f };
   }
   if (st.type === 'land') return { x: AIRFIELD.x0 + 6, z: AIRFIELD.z, y: 1, gy: 0, color: 0x4fc3f7 };
+  if (st.type === 'balloons' && world.balloons) {
+    const left = aliveBalloons(world.balloons).filter((b) => st.mode !== 'color' || b.word === st.word);
+    left.sort((a, b) => Math.hypot(a.x - PL.x, a.z - PL.z) - Math.hypot(b.x - PL.x, b.z - PL.z));
+    const b = left[0];
+    if (b) return { x: b.x, z: b.z, y: b.base + 1.0, gy: 0, color: COLORS[b.word] };
+  }
+  if (st.type === 'hide' && G.hideSpot && !G.hideFound) {
+    // Seeking is the game: the butterfly only helps after a while.
+    if (G.time - G.stepStarted < 9) return null;
+    return { x: G.hideSpot.x, z: G.hideSpot.z, y: 1.4, gy: 0, color: WORD_COL[st.word] || 0x66bb6a };
+  }
   if (st.type === 'done' && !S.finished) return { x: world.lila.x, z: world.lila.z, y: 1.3, gy: 0, color: 0xec407a };
   return null;
 }
@@ -544,6 +690,10 @@ export function interact() {
     } else if (!inside) b.inside = false;
   });
 
+  if (st.type === 'hide' && G.hideSpot && !G.hideFound && Math.hypot(PL.x - G.hideSpot.x, PL.z - G.hideSpot.z) < 2.1) {
+    foundHidden(st);
+    return;
+  }
   if (st.type === 'jump-practice' && PL.jumps > 0) {
     mark('jump', 'heard');
     floatWord('jump');

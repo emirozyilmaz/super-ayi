@@ -5,13 +5,15 @@ Her madde: çocuğa ne verir, hangi İngilizce kelimeleri öğretir, tahmini iş
 ## Yapıldı
 - Bölüm 1–2: renkler, hayvanlar, kostüm dolabı, kaydırak, yüzme.
 - Bölüm 3: salıncak (takla), uçak (5 halka, iniş), büyük göl, yeni pist.
+- Bölüm 4: Balon Festivali — renkli balon patlatma ve 1–5 sayma (`one … five`).
+- Bölüm 5: Saklambaç — tavşan, kuş, tilki, tavuk çalıya saklanır (`Where is the fox?`).
+- Çıkartma albümü: kelime başına çıkartma, "Dinle ve bul" alıştırması.
 
 ## Sıradaki fikirler
 
 ### Oyun alanı ve oyuncaklar
 - **Tahterevalli (M):** iki ayı ya da ayı + yavru. Ağırlıkla yukarı aşağı, `up` / `down`. Karşı tarafa atlayınca diğer ucu fırlatır.
 - **Uçurtma (M):** rüzgâr yönünde tutunca bear yükselir. Renk ve `wind`, `high`, `low` kelimeleri.
-- **Balonlar (S):** gökte renkli balonlar, doğru renge dokununca patlar (`red balloon`). Sayma: `one … five`.
 - **Kum havuzu (S):** kazınca altın ve sürpriz çıkar. `dig`, `sand`, `shell`.
 - **Trambolin parkuru (S):** mevcut mantarlara zincir ve sayma eklenir.
 - **Dönme dolap / atlıkarınca (M):** bineceği hayvanları seçer, `horse`, `cat`, `fish`.
@@ -36,8 +38,8 @@ Her madde: çocuğa ne verir, hangi İngilizce kelimeleri öğretir, tahmini iş
 
 ### Dünya ve karakterler
 - **Mevsim ve gece-gündüz (M):** sahne ışığı değişir, kardan adam / yaprak.
-- **Yeni arkadaşlar (M):** kaplumbağa, kuş, tavşan, her biri bir mini oyun açar.
-- **Bruno'nun evi geliştirme (S):** ödül kartları, çıkartma albümü.
+- **Yeni arkadaşlar (M):** kaplumbağa, kirpi, ayı yavrusu; her biri bir mini oyun açar (kuş, tavşan, tilki, tavuk saklambaçta öğretildi).
+- **Bruno'nun evi geliştirme (S):** ödül kartları; albümdeki çıkartmalar evin duvarında da görünsün.
 - **Mağara ve hazine (L):** ikinci bölge, el feneri.
 
 ## Teknik borç ve iyileştirme

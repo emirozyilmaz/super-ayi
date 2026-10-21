@@ -33,7 +33,7 @@
 
   #gateA { width: 90px; font: inherit; font-size: 24px; font-weight: 800; padding: 6px 10px; border: 3px solid var(--gold); border-radius: 12px; text-align: center; }
   #gateA.bad { animation: shake .35s; border-color: var(--coral); }
-  #load, #menu, #pause, #parent, #gate, #shop, #choose, #finale {
+  #load, #menu, #pause, #parent, #gate, #shop, #choose, #finale, #album {
     position: fixed; inset: 0; z-index: 40;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 14px; padding: 20px;
@@ -224,6 +224,61 @@
   @keyframes up { to { opacity: 0; transform: translateX(-50%) translateY(-70px); } }
   .legend { font-size: 13px; color: #8d6e63; font-weight: 700; }
 
+  /* Sticker album */
+  #btnAlbum { position: relative; }
+  #btnAlbum.bump { animation: pop .5s; }
+  .badge {
+    position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px;
+    background: #e53935; color: #fff; font-size: 12px; font-weight: 900; line-height: 20px; font-style: normal;
+    box-shadow: 0 2px 4px rgba(0,0,0,.25);
+  }
+  .album-panel { width: min(860px, 96vw); max-height: 94vh; overflow: auto; background: #fff3dc;
+    background-image: radial-gradient(rgba(239,108,58,.08) 2px, transparent 2px); background-size: 22px 22px; }
+  .album-head { display: flex; align-items: center; gap: 12px; }
+  #albumTabs { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .album-tab { border: 0; border-radius: 999px; padding: 7px 12px; background: #fff; font-weight: 800; color: #8d6e63;
+    box-shadow: 0 3px 0 #eadfd2; display: flex; align-items: center; gap: 5px; }
+  .album-tab small { color: #bcaaa4; }
+  .album-tab.on { background: var(--coral); color: #fff; box-shadow: 0 3px 0 var(--coral-d); }
+  .album-tab.on small { color: #ffe0d1; }
+  #albumGrid { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; padding: 6px 0; min-height: 150px; }
+  .album-sticker {
+    position: relative; width: clamp(96px, 15vw, 128px); border: 4px solid #e0d6cc; border-radius: 22px; background: #fff;
+    padding: 8px 4px 6px; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    transform: rotate(var(--tilt, 0deg)); transition: transform .15s;
+  }
+  .album-sticker .card-ico { width: 72%; aspect-ratio: 1; display: block; }
+  .album-sticker .card-ico svg { width: 100%; height: 100%; display: block; }
+  .album-sticker .card-ico.q { display: flex; align-items: center; justify-content: center; font-size: 46px; font-weight: 900; color: #d7ccc8; }
+  .album-sticker b { text-transform: uppercase; font-size: 14px; color: var(--ink); }
+  .album-sticker.locked { background: #f4ede6; border-style: dashed; }
+  .album-sticker.met .card-ico { opacity: .45; filter: grayscale(.6); }
+  .album-sticker.met b { color: #a1887f; }
+  .album-sticker.earned { border-color: #ffd54f; box-shadow: 0 5px 0 #f0c040, 0 0 0 3px #fff inset; }
+  .album-sticker.new::after {
+    content: 'YENİ'; position: absolute; top: -10px; right: -8px; background: #e53935; color: #fff; font-size: 11px;
+    font-weight: 900; padding: 2px 7px; border-radius: 8px; transform: rotate(12deg);
+  }
+  .album-sticker.hit { animation: pop .45s; }
+  .album-sticker.miss { animation: shake .35s; }
+  .album-sticker.hint { border-color: var(--leaf); animation: glowpulse 1s ease-in-out infinite; }
+  .album-foot { flex-wrap: wrap; justify-content: center; }
+  .play.small { font-size: 20px; padding: 10px 22px; }
+  .play.off { opacity: .45; }
+  .quiz-only { display: none; }
+  #album.quiz .quiz-only { display: inline-flex; align-items: center; justify-content: center; }
+  #album.quiz .album-sticker.locked { opacity: .35; }
+  .sticker-fly {
+    position: fixed; left: 0; top: 0; width: 140px; z-index: 70; pointer-events: none;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    background: #fff; border: 5px solid #ffd54f; border-radius: 24px; padding: 10px 6px 8px;
+    box-shadow: 0 6px 0 #f0c040, 0 14px 30px rgba(0,0,0,.25);
+  }
+  .sticker-fly .card-ico { width: 84px; height: 84px; display: block; }
+  .sticker-fly .card-ico svg { width: 100%; height: 100%; display: block; }
+  .sticker-fly b { font-size: 14px; color: #e23d6d; white-space: nowrap; }
+  #finaleWords { max-height: 38vh; overflow: auto; }
+
   /* Underwater / surface water look — separate “you are in water” experience. */
   #dive {
     position: fixed; inset: 0; z-index: 12; pointer-events: none;
@@ -337,6 +392,7 @@
     <div class="pill">🪙 <span id="hudCoins">0</span></div>
     <div class="pill">⭐ <span id="hudStars">0/6</span></div>
     <div class="pill">🫧 <span id="hudFriends">0/3</span></div>
+    <button id="btnAlbum" class="icon" type="button" title="Çıkartma albümü">📒<b id="albumBadge" class="badge hidden">0</b></button>
     <button id="btnMute" class="icon" type="button">🔊</button>
     <button id="btnPause" class="icon" type="button">⏸</button>
     <button id="btnParent" class="icon" type="button" title="Aile">👪</button>
@@ -388,6 +444,23 @@
     <div class="row">
       <button id="btnFree" class="play" type="button">🌳 Dolaş</button>
       <button id="btnReplay" class="ghost" type="button">↺ Tekrar oyna</button>
+    </div>
+  </div>
+</div>
+
+<div id="album" class="hidden dim">
+  <div class="panel album-panel">
+    <div class="album-head">
+      <h2>📒 Çıkartma Albümü</h2>
+      <span id="albumCount" class="pill"></span>
+    </div>
+    <div id="albumTabs"></div>
+    <div id="albumGrid"></div>
+    <div class="row album-foot">
+      <button id="albumQuiz" class="play small" type="button">🎧 Dinle ve bul</button>
+      <button id="albumSay" class="icon quiz-only" type="button" title="Tekrar dinle">🔊</button>
+      <span id="albumScore" class="pill quiz-only"></span>
+      <button id="albumClose" class="ghost" type="button">Kapat</button>
     </div>
   </div>
 </div>

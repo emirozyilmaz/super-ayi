@@ -10,12 +10,15 @@ import { bindKeys, updatePlayer, updateCamera } from './player.js';
 import {
   bindQuest, startSession, nextTalk, interact, guideTarget, guideMarks,
   tickQuest, replayInstruction, closeShop, renderParent, starsLabel,
-  finaleFree, finaleReplay, resumeQuest,
+  finaleFree, finaleReplay, resumeQuest, recordAnswer,
 } from './quest.js';
 import { makeGuide, updateGuide, burst } from './guide.js';
 import { itemIcon } from './icons.js';
 import { LINES } from './lines.js';
 import { batchStatic, batchRigid } from './batch.js';
+import { makeBalloons, tickBalloons } from './balloons.js';
+import { makeHideBush, tickHide } from './hide.js';
+import { bindAlbum, bindAlbumUi, openAlbum, closeAlbum } from './album.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -224,10 +227,14 @@ async function boot() {
     world.items.forEach((it) => { if (!it.actor && it.mesh) rigid += batchRigid(it.mesh); });
     world.batchInfo.rigid = rigid;
   }
+  // Chapter 4 and 5 props are made after batching: they move and hide.
+  world.balloons = makeBalloons(scene);
+  world.hideBush = makeHideBush(scene);
   bear = makeBear();
   setHat(bear, S.outfit || S.hat);
   scene.add(bear);
   bindQuest(world, bear, paintHud, effects);
+  bindAlbum((word, firstTry) => { recordAnswer(word, firstTry, true); paintHud(); });
   world.bubbles.forEach((b) => {
     if (b.index >= S.rescues) return;
     b.popped = true;
@@ -401,8 +408,22 @@ function bindUi() {
     location.reload();
   });
   $('shopClose').addEventListener('pointerdown', (e) => { e.preventDefault(); closeShop(); paintHud(); });
+  $('btnAlbum').addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    if (!G.started) return;
+    unlockAudio();
+    pauseGame(null);
+    openAlbum();
+  });
+  $('albumClose').addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    closeAlbum();
+    paintHud();
+    resumeGame();
+  });
+  bindAlbumUi();
   addEventListener('keydown', (e) => {
-    const panelOpen = !$('gate').classList.contains('hidden') || !$('parent').classList.contains('hidden');
+    const panelOpen = ['gate', 'parent', 'album'].some((id) => !$(id).classList.contains('hidden'));
     if ((e.code === 'KeyP' || e.code === 'Escape') && G.started && !panelOpen) {
       if (G.paused) resumeGame();
       else pauseGame('pause');
@@ -560,6 +581,8 @@ function frame(now) {
     updateBear(bear, dt, PL, moving);
     tickToys(world, dt, G.time, bear);
     tickWorld(world, dt, G.time);
+    tickBalloons(world.balloons, dt, G.time, PL);
+    tickHide(world.hideBush, dt, G.time, PL);
     if (!G.lock && !PL.flying) interact();
     tickQuest();
     const t = guideTarget();

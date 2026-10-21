@@ -238,7 +238,8 @@ export function say(id, opts) {
     try {
       await playOne('en', id, token);
       // A known word is English-only; tapping "listen again" (opts.tr) still brings the Turkish back.
-      const wantTr = S.turkish && (!!(opts && opts.tr) || !isKnown(S, lineWord(id)));
+      // opts.noTr: English only (the album quiz, where Turkish would give the answer away).
+      const wantTr = S.turkish && !(opts && opts.noTr) && (!!(opts && opts.tr) || !isKnown(S, lineWord(id)));
       if (token !== seq || !wantTr || S.muted) return token === seq;
       await delay(220);
       if (token !== seq) return false;

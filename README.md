@@ -39,7 +39,15 @@ Fikirler ve sıradaki işler için `ROADMAP.md`.
 
 Bölüm 3 görev sırası: slide (kaydırağa bin) → seç → swing (salıncağa bin) → seç → plane (uçağa bin) → 5 halka → iniş → seç. `?step=31` kaydıraktan, `?step=35` uçaktan başlar.
 
-Oyun sonu: üç arkadaş kurtarılınca kelebek Lila'ya götürür. Lila'ya varınca kutlama olur, öğrenilen altı kelime dokununca okunan çıkartmalar olarak gelir. "Dolaş" bahçede serbest oyuna devam eder, "Tekrar oyna" maceraya baştan başlatır. Kurtarılan yavrular ayının arkasından yürür.
+Bölüm 4 — Balon Festivali (sayılar, `?step=39`): ayının çevresinde balonlar uçuşur. "Pop the red balloon!" görevinde doğru renkteki balon patlatılır; yanlış renk de patlar ama "That's blue." denir ve yerine yenisi gelir. "Pop three balloons!" görevinde her patlayan balon yüksek sesle sayılır (one, two, three…), ardından "Where is three?" kartları gelir (rakam + o kadar nokta). Alçak balonlara yürüyerek, yüksektekilere zıplayarak ulaşılır. Sayılar 1–5 kelime listesine eklendi.
+
+Bölüm 5 — Saklambaç (`?step=52`): tavşan, kuş, tilki ve tavuk sırayla yuvarlak bir çalının içine saklanır ve arada başını çıkarıp bakar (ayı yaklaştıkça daha sık). "Where is the fox?" Aramak oyunun kendisi olduğu için kelebek ilk 9 saniye yol göstermez. Ayı çalıya varınca hayvan zıplayarak çıkar ("Peekaboo! I see you!"), sonra kartlar gelir. Balonlar ve çalılar her seferinde ayının çevresindeki boş yerlere (su, ev, ağaç, yol ve oyuncaklardan uzağa) yerleştirilir (`js/spots.js`).
+
+Çıkartma albümü (📒): her kelime bir çıkartmadır. Kelime bulunup ilk seferde doğru seçilince renkli çıkartma ekranda belirip albüme uçar ve düğmede sayı rozeti çıkar. Albümde sayfalar (Renkler, Meyveler, Hayvanlar, Oyun parkı, Sayılar, Hareket) vardır; tanışılan ama henüz öğrenilmemiş kelimeler soluk, hiç görülmeyenler "?" olur. Çıkartmaya dokununca kelime okunur. "🎧 Dinle ve bul" sayfadaki tanıdık kelimelerden birini yalnızca İngilizce söyler, çocuk çıkartmasını bulur; bu cevaplar da öğrenme bilgisine (ilk seferde bildi, Türkçe azaltma) sayılır. Albüm açıkken oyun durur.
+
+Önceki sürümde oyunu bitirmiş bir kayıt, yeni sürüm ilk açıldığında Bölüm 4'ten devam eder; kelimeler, altınlar ve kostümler korunur.
+
+Oyun sonu: Bölüm 5 bitince kelebek Lila'ya götürür. Lila'ya varınca kutlama olur, bütün kelimeler dokununca okunan çıkartmalar olarak gelir. "Dolaş" bahçede serbest oyuna devam eder, "Tekrar oyna" maceraya baştan başlatır. Kurtarılan yavrular ayının arkasından yürür.
 
 İlerleme tarayıcıda `superayi_en_v2` anahtarıyla durur. Aile paneli (👪, çarpma sorusuyla korunur) her kelime için duyuldu, bulundu, ilk seferde bildi ve sonra hatırladı bilgisini gösterir.
 
@@ -53,7 +61,7 @@ Deneme: `?autostart=1` menüyü atlar. `?step=8` görev numarasından başlar.
 
 ## Ses
 
-Gömülü sesler Microsoft Edge neural TTS ile üretilir: İngilizce **Aria**, Türkçe **Emel**. (Eski Windows Tolga sesi “kırmızı”yı yanlış okuyordu.) Üretim için bir kez internet gerekir; oyun dosyaları çevrimdışı çalar. `pip install edge-tts` sonrası:
+Gömülü sesler Microsoft Edge neural TTS ile üretilir: İngilizce **Aria**, Türkçe **Emel**. Replik listesi yalnızca `js/lines.js` içindedir; `tools/make_voices.py` listeyi oradan okur ve yalnızca eksik sesleri üretir. (Eski Windows Tolga sesi “kırmızı”yı yanlış okuyordu.) Üretim için bir kez internet gerekir; oyun dosyaları çevrimdışı çalar. `pip install edge-tts` sonrası:
 
 ```
 powershell -File tools/make-voices.ps1
