@@ -8,6 +8,10 @@ Her madde: çocuğa ne verir, hangi İngilizce kelimeleri öğretir, tahmini iş
 - Bölüm 4: Balon Festivali — renkli balon patlatma ve 1–5 sayma (`one … five`).
 - Bölüm 5: Saklambaç — tavşan, kuş, tilki, tavuk çalıya saklanır (`Where is the fox?`).
 - Çıkartma albümü: kelime başına çıkartma, "Dinle ve bul" alıştırması.
+- Çocuk profilleri (4 çocuğa kadar), aile paneli sekmeleri ve haftalık rapor.
+- Günlük oyun süresi sınırı ve mola ekranı.
+- "Sıra sende!" konuşma pratiği (mikrofonla ya da mikrofonsuz).
+- Günün kelimesi avı, kodla üretilen arka plan müziği, ayrı ses düzeyleri.
 
 ## Sıradaki fikirler
 
@@ -34,7 +38,6 @@ Her madde: çocuğa ne verir, hangi İngilizce kelimeleri öğretir, tahmini iş
 - **Kelime avı günü (M):** günün kelimesi, bahçede 3 kez saklı bulunur.
 - **Şarkı ve tekrar (M):** `head, shoulders…` benzeri kısa şarkı, ayı dans eder.
 - **Harf ve ilk ses (L):** `A for apple`; yalnızca ses ve resim, okuma beklenmez.
-- **Aile paneli geliştirme (S):** haftalık ilerleme, hangi kelime zayıf.
 
 ### Dünya ve karakterler
 - **Mevsim ve gece-gündüz (M):** sahne ışığı değişir, kardan adam / yaprak.

@@ -427,7 +427,11 @@ function placeOnSwing(sw) {
 export function tryMountSwing(world, locked) {
   const t = world.toys;
   if (!t || locked || PL.swinging || PL.flying || PL.onSlide || G.time < (G.swingCool || 0)) return false;
-  if (PL.y > 1.5) return false;
+  if (PL.y > 1.5 || !PL.onG) return false;
+  if (t.swingBlocked) {
+    if (t.swings.every((sw) => Math.hypot(PL.x - sw.x, PL.z - sw.z) > 1.8)) t.swingBlocked = false;
+    else return false;
+  }
   for (const sw of t.swings) {
     if (sw.taken) continue;
     if (Math.hypot(PL.x - sw.x, PL.z - sw.z) < 1.2) {
@@ -451,7 +455,7 @@ export function tryMountSwing(world, locked) {
   return false;
 }
 
-function launchFromSwing(sw) {
+function launchFromSwing(world, sw) {
   const r = swingR(sw);
   const vz = clamp(r * Math.cos(sw.theta) * sw.omega, -11, 11);
   const vy = clamp(r * Math.sin(sw.theta) * sw.omega, 0, 9);
@@ -464,8 +468,10 @@ function launchFromSwing(sw) {
   PL.onG = false;
   PL.wasG = false;
   PL.jumps = 1;
+  PL.launched = true;
   PL.yaw = vz >= 0 ? 0 : Math.PI;
   G.swingCool = G.time + 1.6;
+  world.toys.swingBlocked = true;
   IN.diveBuf = 0;
   sfx.jump();
   if (Math.abs(vz) > 5) say('wheee', { soft: true });
@@ -482,7 +488,7 @@ export function updateSwing(world, dt, inp) {
       sfx.click();
     }
     if (inp.dive) {
-      launchFromSwing(sw);
+      launchFromSwing(world, sw);
       return;
     }
   }

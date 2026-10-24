@@ -18,7 +18,7 @@ const CELL = 32;
 
 /** Collect every Object3D found in the given values (arrays / plain objects, a few levels deep). */
 function collectObjects(values, out, depth = 0) {
-  if (!values || depth > 4) return;
+  if (!values || depth > 7) return;
   if (values.isObject3D) { out.add(values); return; }
   if (Array.isArray(values)) { values.forEach((v) => collectObjects(v, out, depth + 1)); return; }
   if (typeof values === 'object' && values.constructor === Object) {

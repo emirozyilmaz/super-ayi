@@ -49,7 +49,37 @@ Bölüm 5 — Saklambaç (`?step=52`): tavşan, kuş, tilki ve tavuk sırayla yu
 
 Oyun sonu: Bölüm 5 bitince kelebek Lila'ya götürür. Lila'ya varınca kutlama olur, bütün kelimeler dokununca okunan çıkartmalar olarak gelir. "Dolaş" bahçede serbest oyuna devam eder, "Tekrar oyna" maceraya baştan başlatır. Kurtarılan yavrular ayının arkasından yürür.
 
-İlerleme tarayıcıda `superayi_en_v2` anahtarıyla durur. Aile paneli (👪, çarpma sorusuyla korunur) her kelime için duyuldu, bulundu, ilk seferde bildi ve sonra hatırladı bilgisini gösterir.
+### Çocuk profilleri
+
+Aynı cihazda en fazla 4 çocuk oynayabilir; her birinin simgesi, adı ve ilerlemesi ayrıdır. İkinci çocuk eklenince (ya da ilk çocuğa ad verilince) açılış ekranında "Kim oynuyor?" kartları çıkar; karta dokunmak o çocuğa geçer. Profiller aile panelinin "Çocuklar" sekmesinden eklenir, adlandırılır, simgesi değiştirilir ve silinir. İlk çocuğun kaydı eski anahtarda (`superayi_en_v2`) kalır, diğerleri `superayi_en_v2_<id>` anahtarında durur; profil listesi `superayi_profiles` içindedir.
+
+### Aile paneli (👪)
+
+Çarpma sorusuyla korunur. Dört sekme:
+- **İlerleme:** her kelime için duyuldu, bulundu, ilk seferde bildi, sonra hatırladı; EN rozeti (Türkçe artık kendiliğinden çalmıyor) ve 🗣️ (kaç kez sesli söyledi).
+- **Bu hafta:** son 7 günün oyun dakikaları (çubuk grafik), bu hafta kazanılan çıkartmalar, en çok zorlandığı kelimeler.
+- **Ayarlar:** müzik / oyun sesleri / konuşma ses düzeyi, Türkçe çeviri, konuşma pratiği modu, günlük oyun süresi, çevrimdışı kopya durumu, ilerlemeyi sıfırlama, sürüm.
+- **Çocuklar:** profiller.
+
+### Günlük oyun süresi ve mola
+
+Ayarlar'dan 10–60 dakikalık günlük sınır seçilebilir (varsayılan: sınırsız). Son iki dakikada Lila "Two more minutes!" der; süre dolunca sakin bir "Mola zamanı!" ekranı açılır ve oyun durur. Bu ekrandan yalnızca ebeveyn (çarpma sorusu) 10 dakika daha ekleyebilir. Süre yalnızca oyun gerçekten oynanırken sayılır (duraklatılmışken ya da sekme arka plandayken sayılmaz).
+
+### Konuşma pratiği ("Sıra sende!")
+
+Doğru karttan sonra (yeni kelimelerde her zaman, söylenmiş kelimelerde ara sıra) Lila kelimeyi söyler, sonra "Your turn! Say it!" der:
+- **Mikrofonsuz** (varsayılan): mikrofon simgesi birkaç saniye nabız gibi atar, çocuk kelimeyi tekrar eder, "Well said!".
+- **Mikrofonla:** çocuğun sesi ~2 saniye kaydedilir ve hemen biraz incelterek geri çalınır ("Listen to you!"). Çok sessizse bir kez "A little louder!" denir. Kayıt hiçbir yere kaydedilmez veya gönderilmez. Mikrofon izni, ebeveyn Ayarlar'da "Mikrofonla"yı seçtiğinde istenir; böylece izin penceresi oyunun ortasında çocuğu şaşırtmaz.
+- **Kapalı.**
+"Geç ▶" düğmesi bu anı atlar.
+
+### Günün kelimesi
+
+Hikâyede biraz ilerledikten sonra (8. adım) her gün, çocuğun tanıştığı kelimelerden biri (tercihen zayıf olanı) bahçenin üç ayrı yerine ışıklı jeton olarak saklanır; jetonların üstünde kelimenin resmi ve uzaktan görünen bir ışık sütunu vardır. Görev kartının altındaki 🔎 çipi ilerlemeyi gösterir, dokununca kelime söylenir. Üçü bulununca 8 altın kazanılır ve kelime yeniden "bulundu" sayılır. Hikâyeyi hiç durdurmaz.
+
+### Müzik
+
+Kodla üretilen, dosyası olmayan sakin bir marimba ezgisi (C majör, 92 vuruş). Biri konuşurken kısılır, konuşma pratiğinde neredeyse susar, su altında boğuk duyulur. Ses düzeyleri cihaz ayarıdır (`superayi_settings`).
 
 Öğrenme kuralları:
 - Seçim kartları her seferinde karışır; yanlış kartlar hep aynı gruptan gelir (renk, meyve, hayvan, oyuncak). Meyvede yalnızca iki kelime olduğu için iki kart çıkar.
@@ -60,6 +90,8 @@ Oyun sonu: Bölüm 5 bitince kelebek Lila'ya götürür. Lila'ya varınca kutlam
 Deneme: `?autostart=1` menüyü atlar. `?step=8` görev numarasından başlar.
 
 ## Ses
+
+Ses kanalları (konuşma, oyun sesleri, müzik) ayrı ayrı ayarlanır; 🔇 düğmesi hepsini kapatır. Bir replik telefon araması gibi bir kesintide takılırsa birkaç saniye sonra kendiliğinden bırakılır. iPad/iPhone'da ses ilk dokunuşla açılır ve uygulama arka plandan dönünce yeniden açılır.
 
 Gömülü sesler Microsoft Edge neural TTS ile üretilir: İngilizce **Aria**, Türkçe **Emel**. Replik listesi yalnızca `js/lines.js` içindedir; `tools/make_voices.py` listeyi oradan okur ve yalnızca eksik sesleri üretir. (Eski Windows Tolga sesi “kırmızı”yı yanlış okuyordu.) Üretim için bir kez internet gerekir; oyun dosyaları çevrimdışı çalar. `pip install edge-tts` sonrası:
 

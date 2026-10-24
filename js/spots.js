@@ -25,7 +25,11 @@ export function isFree(world, x, z, clear) {
   for (const o of world.obstacles) {
     if (o.box) {
       if (Math.abs(x - o.x) < o.hw + clear && Math.abs(z - o.z) < o.hd + clear) return false;
-    } else if (Math.hypot(x - o.x, z - o.z) < o.r + clear) return false;
+    } else if (!o.off && Math.hypot(x - o.x, z - o.z) < o.r + clear) return false;
+  }
+  // Things you get onto by walking up to them: a balloon or bush there would start a ride.
+  for (const k of world.keepClear || []) {
+    if (Math.hypot(x - k.x, z - k.z) < k.r + clear) return false;
   }
   // Keep the garden gate and the big landmarks (houses, arches, trees) clear as well.
   if (world.gate && Math.hypot(x - world.gate.x, z - world.gate.z) < world.gate.r + 1 + clear) return false;

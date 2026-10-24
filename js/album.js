@@ -84,8 +84,7 @@ function renderTabs() {
     b.type = 'button';
     b.className = `album-tab${i === page ? ' on' : ''}`;
     b.innerHTML = `<span>${p.icon}</span>${p.title} <small>${got}/${words.length}</small>`;
-    b.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
+    b.addEventListener('click', () => {
       if (page === i) return;
       page = i;
       stopQuiz();
@@ -110,10 +109,8 @@ function renderGrid() {
     b.innerHTML = state === 'locked'
       ? '<span class="card-ico q">?</span><b>&nbsp;</b>'
       : `<span class="card-ico">${cardIcon(word)}</span><b lang="en">${word}</b>`;
-    b.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      tapSticker(b, word, state);
-    });
+    // click (not pointerdown): starting to scroll the album must not count as an answer.
+    b.addEventListener('click', () => tapSticker(b, word, state));
     grid.appendChild(b);
   });
 }

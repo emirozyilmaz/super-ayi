@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { toonMat } from './bear.js';
 import { COLORS } from './lines.js';
-import { freeSpot } from './spots.js';
+import { freeSpot, isFree } from './spots.js';
 
 /*
  * Balloon Festival (chapter 4). A small pool of balloons is placed around the bear for each task.
@@ -54,6 +54,17 @@ function show(b, word, spot, base) {
   b.group.visible = true;
 }
 
+/** Last resort: walk round a circle until a spot is free (or keep the bear's own spot). */
+function fallbackSpot(world, from, i) {
+  for (let k = 0; k < 24; k++) {
+    const a = i * 1.7 + k * 0.6;
+    const r = 2.5 + (k % 4);
+    const s = { x: from.x + Math.cos(a) * r, z: from.z + Math.sin(a) * r };
+    if (isFree(world, s.x, s.z, 0.4)) return s;
+  }
+  return { x: from.x, z: from.z };
+}
+
 /** Balloons in the given colours, spread out 3–9 m around `from`. */
 export function placeBalloons(set, world, from, words) {
   set.list.forEach((b) => { if (b.alive) { b.alive = false; b.group.visible = false; } });
@@ -63,7 +74,7 @@ export function placeBalloons(set, world, from, words) {
   words.slice(0, free.length).forEach((word, i) => {
     const spot = freeSpot(world, from, 3, 9, 0.9, taken, 2.2)
       || freeSpot(world, from, 2, 12, 0.6, taken, 1.6)
-      || { x: from.x + Math.cos(i * 1.7) * 3, z: from.z + Math.sin(i * 1.7) * 3 };
+      || fallbackSpot(world, from, i);
     taken.push(spot);
     // Some float low enough to walk into, some need a jump.
     show(free[i], word, spot, 1.5 + Math.random() * 1.1);
@@ -75,7 +86,7 @@ export function addBalloon(set, world, from, word) {
   const b = set.list.find((q) => !q.alive && !q.group.visible);
   if (!b) return;
   const others = set.list.filter((q) => q.alive);
-  const spot = freeSpot(world, from, 3, 9, 0.9, others, 2.2) || { x: from.x + 3, z: from.z };
+  const spot = freeSpot(world, from, 3, 9, 0.9, others, 2.2) || fallbackSpot(world, from, others.length);
   show(b, word, spot, 1.5 + Math.random() * 1.1);
 }
 

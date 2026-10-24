@@ -13,6 +13,8 @@ import { placeBalloons, addBalloon, releaseBalloons, aliveBalloons } from './bal
 import { hideAnimal, revealAnimal } from './hide.js';
 import { freeSpot } from './spots.js';
 import { unlockStickers } from './album.js';
+import { wantsSpeak, speakPractice } from './speak.js';
+import { dayKey } from './stats.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -120,7 +122,11 @@ function runTimers() {
 export function resumeQuest() {
   if (G.talkLeft.length && !$('dlg').classList.contains('hidden')) showTalkLine();
   else if (G.chooseOpen) replayInstruction();
+  else if (!G.lock && step().say && ROAMING.includes(step().type)) say(step().say);
 }
+
+/** A later() call that moves the quest on is waiting (the step is finishing). */
+function finishing() { return timers.length > 0; }
 
 const WORD_COL = {
   red: COLORS.red, blue: COLORS.blue, yellow: COLORS.yellow,
@@ -150,10 +156,18 @@ function lookAtTarget() {
   G.camLookUntil = G.time + 2.2;
 }
 
+/** A step whose work is already done (the game was closed between finishing it and moving on). */
+function alreadyDone(st) {
+  // The plane is parked: landing is done.
+  if (st.type === 'land' && !PL.flying) return true;
+  // The friend was freed (S.rescues is saved at once, the next step 0.7 s later).
+  if (st.type === 'rescue' && S.rescues > st.index) return true;
+  return false;
+}
+
 export function beginStep() {
-  if (step().type === 'land' && !PL.flying) {
-    // A saved game reopened on the landing step: the plane is already parked, so landing is done.
-    S.quest = Math.min(STEPS.length - 1, S.quest + 1);
+  while (S.quest < STEPS.length - 1 && alreadyDone(step())) {
+    S.quest += 1;
     writeSave(S);
   }
   const st = step();
@@ -181,7 +195,7 @@ export function beginStep() {
   if (st.type === 'balloons') startBalloons(st);
   if (st.type === 'hide') startHide(st);
   if (st.type === 'choose') openChoose(st);
-  else if (st.intro) say(st.intro).then((ok) => { if (ok && step() === st) say(st.say); });
+  else if (st.intro) say(st.intro).then(() => { if (step() === st && !G.paused && !G.chooseOpen) say(st.say); });
   else if (st.say) say(st.say);
   if (st.type === 'jump-choose') {
     world.choosePads.forEach((p) => { p.mesh.visible = true; p.shown = true; });
@@ -207,7 +221,7 @@ export function tickQuest() {
     } else G.rideReady = 0;
     return;
   }
-  if (PL.swinging || PL.onSlide) return;
+  if (PL.swinging || PL.onSlide || PL.flying) return;
   const toLila = st.type === 'done' && !S.finished;
   if (!ROAMING.includes(st.type) && !toLila) return;
   const wait = G.nudges ? 18 : 13;
@@ -232,7 +246,7 @@ export function tickQuest() {
 export function replayInstruction() {
   const st = step();
   if (G.chooseOpen && G.chooseSay) say(G.chooseSay, { tr: true });
-  else if (st.type === 'talk' && G.talkLeft.length) say(G.talkLeft[0], { tr: true });
+  else if (st.type === 'talk' && G.talkLeft.length) showTalkLine({ tr: true });
   else if (st.say) say(st.say, { tr: true });
 }
 
@@ -305,6 +319,9 @@ function onToyEvent(name, data) {
   }
 }
 
+/** For other modules (word of the day): update a word's learning stats. */
+export function markWord(word, field) { mark(word, field); }
+
 function mark(word, field) {
   if (!LESSON.includes(word)) return;
   const w = S.words[word];
@@ -312,7 +329,11 @@ function mark(word, field) {
   w[field] = true;
   writeSave(S);
   // Found and picked right on the first try: the word's sticker goes into the album.
-  if (!before && mastered(word)) unlockStickers([word]);
+  if (!before && mastered(word)) {
+    w.learnedAt = Date.now(); // for the weekly report
+    writeSave(S);
+    unlockStickers([word]);
+  }
 }
 
 function advance() {
@@ -331,7 +352,7 @@ function openTalk(ids) {
   $('dlg').classList.remove('hidden');
 }
 
-function showTalkLine() {
+function showTalkLine(opts) {
   const id = G.talkLeft[0];
   const pair = LINES[id] || ['...', ''];
   $('dlgName').textContent = 'Lila';
@@ -339,7 +360,9 @@ function showTalkLine() {
   $('dlgTr').textContent = S.turkish ? pair[1] : '';
   const token = ++G.talkToken;
   const t0 = performance.now();
-  say(id).then(() => {
+  say(id, opts).then((ok) => {
+    // Cut off (replay, pause, mute): whoever cut it off decides what comes next.
+    if (!ok && token !== G.talkToken) return;
     const wait = performance.now() - t0 < 400 ? 2600 : 700;
     later(() => {
       if (token === G.talkToken && G.talkLeft.length) nextTalk();
@@ -387,10 +410,7 @@ function cardOptions(word) {
  */
 const REVIEW_SIZE = 3;
 
-function today() {
-  const d = new Date();
-  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-}
+const today = () => dayKey();
 
 function weakness(word) {
   const w = S.words[word];
@@ -442,9 +462,25 @@ export function recordAnswer(word, firstTry, keep) {
   const w = S.words[word];
   if (!w) return;
   w.streak = firstTry ? (w.streak || 0) + 1 : 0;
+  if (!firstTry) w.misses = (w.misses || 0) + 1; // the report lists the hardest words
   if (firstTry) mark(word, 'chosen');
   else writeSave(S);
   if (keep) mark(word, 'kept');
+}
+
+/** After a right card: sometimes a "your turn" speaking moment, then the next step. */
+function afterAnswer(st) {
+  if (st.word && wantsSpeak(st.word)) {
+    G.lock = true;
+    later(() => {
+      speakPractice(st.word).then(() => {
+        G.lock = false;
+        if (step() === st) advance();
+      });
+    }, 650);
+    return;
+  }
+  later(() => { if (step() === st) advance(); }, 700);
 }
 
 function openChoose(st) {
@@ -474,9 +510,11 @@ function openChoose(st) {
         floatWord(st.word);
         say('great');
         $('choose').classList.add('hidden');
-        G.lock = false;
+        // Between review cards nothing else may happen: the current step has not begun yet.
+        G.lock = st.type === 'review';
         if (st.type === 'rescue') popBubble(st.index);
-        later(() => (st.type === 'review' ? nextReview() : advance()), 700);
+        if (st.type === 'review') later(() => nextReview(), 700);
+        else afterAnswer(st);
       } else {
         b.classList.remove('bad');
         void b.offsetWidth;
@@ -590,7 +628,14 @@ function startHide(st) {
   G.hideSpot = null;
   const an = world.animals.find((a) => a.word === st.word && !a.npc);
   if (!an || !world.hideBush) return;
-  const spot = freeSpot(world, PL, 10, 20, 1.6) || freeSpot(world, PL, 6, 26, 1.0) || { x: an.x, z: an.z };
+  let spot = freeSpot(world, PL, 10, 20, 1.6) || freeSpot(world, PL, 6, 26, 1.0);
+  if (!spot) {
+    // Fallback: the animal's own place, or if that is too close, its walking path's far end.
+    const far = (an.saved && an.saved.wander || an.wander || []).map(([x, z]) => ({ x, z }))
+      .concat([{ x: an.homeX, z: an.homeZ }, { x: an.x, z: an.z }])
+      .sort((a, b) => Math.hypot(b.x - PL.x, b.z - PL.z) - Math.hypot(a.x - PL.x, a.z - PL.z))[0];
+    spot = far;
+  }
   G.hideSpot = spot;
   hideAnimal(world.hideBush, an, spot, PL);
 }
@@ -731,7 +776,7 @@ export function interact() {
       it.alive = false;
       it.mesh.visible = false;
       it.respawn = G.time + 12;
-      if (PL.vy < 0 && !PL.stomping) PL.vy = 5.8;
+      if (PL.vy < 0 && !PL.stomping) { PL.vy = 5.8; PL.launched = true; }
       S.coins += 3;
       writeSave(S);
       sfx.coin();
@@ -765,7 +810,7 @@ export function interact() {
       G.lock = true;
       later(() => {
         G.lock = false;
-        if (step().type === 'animal') advance();
+        if (step() === st) advance();
       }, 1300);
       return;
     }
@@ -815,7 +860,8 @@ export function interact() {
   }
 
   const shopD = Math.hypot(PL.x - world.shop.x, PL.z - world.shop.z);
-  if (shopD < world.shop.r && !G.shopCool) {
+  // Not while a step is finishing: its next step would open under the shop.
+  if (shopD < world.shop.r && !G.shopCool && !finishing()) {
     G.shopCool = true;
     openShop();
   } else if (shopD > world.shop.r + 1.4) G.shopCool = false;
@@ -853,7 +899,7 @@ function countCollect(it, st) {
       G.lock = true;
       later(() => {
         G.lock = false;
-        if (step().type === 'collect') advance();
+        if (step() === st) advance();
       }, 1400);
     }
     return true;
@@ -895,6 +941,8 @@ function takeFlower(it, st) {
 function popBush(it) {
   it.alive = false;
   it.mesh.visible = false;
+  it.respawn = G.time + 40;
+  if (it.obstacle) it.obstacle.off = true;
   sfx.pop();
   spawnBonusCoin(it.x + 0.45, it.z);
   spawnBonusCoin(it.x - 0.35, it.z + 0.35);
@@ -925,14 +973,15 @@ function stompMushroom(it) {
 
 function openFinale() {
   G.lock = true;
-  S.finished = true;
-  writeSave(S);
   hush();
   faceAnimal(world.lila, PL.x, PL.z);
   cheerBear(bear);
   fx.finale();
   say('you-did-it').then(() => say('all-done', { soft: true }));
   later(() => {
+    // Saved only now: a game closed before the panel showed comes back to Lila for it.
+    S.finished = true;
+    writeSave(S);
     const box = $('finaleWords');
     box.innerHTML = '';
     LESSON.forEach((w) => {
@@ -977,7 +1026,7 @@ export function openShop() {
 
 export function closeShop() {
   $('shop').classList.add('hidden');
-  G.lock = false;
+  G.lock = G.chooseOpen || G.talkLeft.length > 0 || !!G.review || !$('finale').classList.contains('hidden');
 }
 
 function renderShop() {
@@ -1025,11 +1074,10 @@ export function renderParent() {
     row.className = 'prow';
     const dot = (on) => `<span class="${on ? 'on' : ''}">${on ? '●' : '○'}</span>`;
     const en = isKnown(S, id) ? ' <small class="en" title="Türkçe çeviri artık kendiliğinden çalmıyor">EN</small>' : '';
-    row.innerHTML = `<b>${id}${en}</b> <em>${WORD_TR[id]}</em> ${dot(w.heard)}${dot(w.found)}${dot(w.chosen)}${dot(w.kept)}`;
+    const said = w.spoken ? ` <small class="said" title="Sesli söyledi">🗣️${w.spoken}</small>` : '';
+    row.innerHTML = `<b>${id}${en}</b> <em>${WORD_TR[id]}</em>${said} ${dot(w.heard)}${dot(w.found)}${dot(w.chosen)}${dot(w.kept)}`;
     grid.appendChild(row);
   });
-  $('togTr').checked = !!S.turkish;
-  $('togSfx').checked = !!S.sfx;
 }
 
 export function starsLabel() {

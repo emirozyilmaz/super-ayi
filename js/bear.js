@@ -195,9 +195,20 @@ export function setHat(bear, idOrOutfit) {
     ? idOrOutfit
     : { hat: idOrOutfit || null, eyes: null, back: null };
 
-  while (p.hatSocket.children.length) p.hatSocket.remove(p.hatSocket.children[0]);
-  while (p.eyeSocket.children.length) p.eyeSocket.remove(p.eyeSocket.children[0]);
-  while (p.backSocket.children.length) p.backSocket.remove(p.backSocket.children[0]);
+  // Old outfit pieces are freed, not just detached (every costume change used to leak a little).
+  const clear = (socket) => {
+    while (socket.children.length) {
+      const c = socket.children[0];
+      socket.remove(c);
+      c.traverse((o) => {
+        if (o.geometry) o.geometry.dispose();
+        if (o.material) [].concat(o.material).forEach((m) => m.dispose());
+      });
+    }
+  };
+  clear(p.hatSocket);
+  clear(p.eyeSocket);
+  clear(p.backSocket);
   p.capePivot = null;
   p.capeSegs = null;
 

@@ -1,6 +1,7 @@
 import { LINES, lineWord } from './lines.js';
 import { S } from './state.js';
 import { isKnown } from './save.js';
+import { SET, onSettings } from './settings.js';
 
 let seq = 0;
 let playing = false;
@@ -16,15 +17,42 @@ let stopCurrent = null; // resolves the line that is playing when it gets cut of
  * let every later line play (an <audio> started by a timer can be blocked there), and there
  * is no per-line loading delay. Compressed bytes are cached for all clips; decoded audio is
  * kept only for the most recent lines so a tablet's memory stays small.
+ *
+ * Mixer: voice, effects and music each have their own volume (family panel), all through one
+ * master gain that the mute button closes.
  */
 const bytes = new Map(); // url -> Promise<ArrayBuffer|null>
 const decoded = new Map(); // url -> AudioBuffer, oldest first
 const DECODED_MAX = 40;
+const bus = { master: null, voice: null, sfx: null, music: null };
 
 function makeContext() {
   if (ac) return;
-  try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = null; }
+  try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = null; return; }
+  bus.master = ac.createGain();
+  bus.master.connect(ac.destination);
+  ['voice', 'sfx', 'music'].forEach((k) => {
+    bus[k] = ac.createGain();
+    bus[k].connect(bus.master);
+  });
+  applyVolumes();
 }
+
+/** Mixer levels from the settings and the mute button. */
+export function applyVolumes() {
+  if (!ac) return;
+  const t = ac.currentTime;
+  bus.master.gain.setTargetAtTime(S.muted ? 0 : 1, t, 0.03);
+  bus.voice.gain.setTargetAtTime(SET.voice, t, 0.03);
+  bus.sfx.gain.setTargetAtTime(SET.sfx, t, 0.03);
+  bus.music.gain.setTargetAtTime(SET.music * 0.5, t, 0.03);
+  if (currentAudio) currentAudio.volume = S.muted ? 0 : SET.voice;
+}
+onSettings(applyVolumes);
+
+export function audioCtx() { return ac; }
+export function voiceBus() { return bus.voice; }
+export function musicBus() { return bus.music; }
 
 export async function initAudio() {
   makeContext();
@@ -36,12 +64,33 @@ export async function initAudio() {
 
 export function unlockAudio() {
   makeContext();
-  if (ac && ac.state === 'suspended') ac.resume().catch(() => {});
+  if (ac && ac.state !== 'running') ac.resume().catch(() => {});
 }
+
+/*
+ * Safari only lets audio start inside certain gestures (touchend / click, not touchstart or a
+ * touch pointerdown). Listen to all of them until the context is really running, and again
+ * whenever the system suspends it (app in the background, a phone call).
+ */
+function keepUnlocked() {
+  const kick = () => { if (!ac || ac.state !== 'running') unlockAudio(); };
+  ['pointerup', 'touchend', 'click', 'keydown'].forEach((ev) => addEventListener(ev, kick, { capture: true, passive: true }));
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) kick(); });
+}
+keepUnlocked();
 
 function fetchBytes(url) {
   if (!bytes.has(url)) {
-    bytes.set(url, fetch(url).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null));
+    const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timer = ctl ? setTimeout(() => ctl.abort(), 9000) : 0;
+    const p = fetch(url, ctl ? { signal: ctl.signal } : undefined)
+      .then((r) => (r.ok ? r.arrayBuffer() : null)) // a real 404 stays null (try the next format)
+      .catch(() => {
+        bytes.delete(url); // a network hiccup is not final: try again next time
+        return null;
+      })
+      .finally(() => clearTimeout(timer));
+    bytes.set(url, p);
   }
   return bytes.get(url);
 }
@@ -84,12 +133,19 @@ function playBuffer(buf) {
   return new Promise((resolve) => {
     const src = ac.createBufferSource();
     src.buffer = buf;
-    src.connect(ac.destination);
+    src.connect(bus.voice);
     currentSrc = src;
-    const finish = (ok) => {
+    let done = false;
+    // If the system suspends audio mid-line (phone call, Siri), onended never comes: give up
+    // a little after the clip should have finished, so speech never stays "busy" forever.
+    const safety = setTimeout(() => finish(false), buf.duration * 1000 + 1500);
+    function finish(ok) {
+      if (done) return;
+      done = true;
+      clearTimeout(safety);
       if (currentSrc === src) { currentSrc = null; stopCurrent = null; }
       resolve(ok);
-    };
+    }
     stopCurrent = () => finish(false);
     src.onended = () => finish(true);
     src.start();
@@ -97,7 +153,7 @@ function playBuffer(buf) {
 }
 
 function tone(f0, f1, dur, type, vol, delay) {
-  if (!S.sfx || S.muted || !ac) return;
+  if (S.muted || !ac || SET.sfx <= 0) return;
   try {
     const t = ac.currentTime + (delay || 0);
     const o = ac.createOscillator();
@@ -108,7 +164,7 @@ function tone(f0, f1, dur, type, vol, delay) {
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(vol || 0.12, t + 0.02);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g); g.connect(ac.destination);
+    o.connect(g); g.connect(bus.sfx);
     o.start(t); o.stop(t + dur + 0.05);
   } catch (e) { /* ignore */ }
 }
@@ -152,14 +208,17 @@ function stopPlayback() {
 function playUrl(src) {
   return new Promise((resolve) => {
     const a = new Audio(src);
+    a.volume = S.muted ? 0 : SET.voice;
     currentAudio = a;
     let done = false;
-    const finish = (ok) => {
+    const safety = setTimeout(() => finish(false), 12000);
+    function finish(ok) {
       if (done) return;
       done = true;
+      clearTimeout(safety);
       if (currentAudio === a) { currentAudio = null; stopCurrent = null; }
       resolve(ok);
-    };
+    }
     stopCurrent = () => finish(false);
     a.onended = () => finish(true);
     a.onerror = () => finish(false);
@@ -171,15 +230,19 @@ function playUrl(src) {
 function fallbackSpeak(lang, text) {
   if (!('speechSynthesis' in window) || !text) return Promise.resolve();
   return new Promise((resolve) => {
+    // Some browsers drop onend after cancel(); never wait longer than the text could take.
+    const safety = setTimeout(resolve, 1500 + text.length * 120);
+    const done = () => { clearTimeout(safety); resolve(); };
     try {
       const u = new SpeechSynthesisUtterance(text);
       u.lang = lang === 'en' ? 'en-US' : 'tr-TR';
       u.rate = lang === 'en' ? 0.88 : 0.94;
       u.pitch = lang === 'en' ? 1.1 : 1.0;
-      u.onend = () => resolve();
-      u.onerror = () => resolve();
+      u.volume = SET.voice;
+      u.onend = done;
+      u.onerror = done;
       speechSynthesis.speak(u);
-    } catch (e) { resolve(); }
+    } catch (e) { done(); }
   });
 }
 
@@ -227,6 +290,7 @@ export function canAmbient() {
  * Say the English line, then Turkish.
  * Soft lines never interrupt: they skip if something is already speaking
  * or if an ambient quiet gap is still active.
+ * Resolves true when the line played to the end, false when it was cut off.
  */
 export function say(id, opts) {
   const soft = !!(opts && opts.soft);

@@ -10,7 +10,7 @@ export const PL = {
   speed: 4.4, vx: 0, vz: 0, slideV: 0, r: 0.46, squash: 0, climbing: null,
   swimming: false, wasSwim: false, submerged: false, swimPhase: 0,
   diving: false, stomping: false, sliding: 0, onSlide: false,
-  swinging: null, flying: null, carry: false,
+  swinging: null, flying: null, carry: false, launched: false,
 };
 
 export const G = {

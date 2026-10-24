@@ -1,6 +1,8 @@
 import { LESSON } from './lines.js';
+import { PROFILES, saveKeyFor } from './profiles.js';
 
-const KEY = 'superayi_en_v2';
+// Each child profile has its own save; the first one keeps the original key.
+const KEY = saveKeyFor(PROFILES.current);
 // 2: chapters 4 (balloons, numbers) and 5 (hide and seek) were added after step 38.
 const CONTENT_VERSION = 2;
 const NEW_CHAPTERS_STEP = 39;
@@ -27,6 +29,10 @@ export function emptySave() {
     finished: false,
     reviewDay: '',
     albumSeen: [],
+    playLog: {}, // day -> seconds played (weekly report, daily limit)
+    limitMin: 0, // daily play limit in minutes, 0 = no limit
+    limitExtra: null, // { day, min }: extra time a parent granted today
+    hunt: null, // today's word-of-the-day hunt
     contentVersion: CONTENT_VERSION,
   };
 }
@@ -34,13 +40,16 @@ export function emptySave() {
 export function loadSave() {
   const s = emptySave();
   try {
-    const raw = JSON.parse(localStorage.getItem(KEY) || '{}');
+    let raw = JSON.parse(localStorage.getItem(KEY) || '{}');
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) raw = {};
     Object.assign(s, raw);
     s.words = Object.assign(emptySave().words, raw.words || {});
     LESSON.forEach((id) => { s.words[id] = Object.assign(blankWord(), s.words[id]); });
     if (!Array.isArray(s.hats)) s.hats = [];
     s.outfit = Object.assign({ hat: s.hat || null, eyes: null, back: null }, raw.outfit || {});
     if (!Array.isArray(s.albumSeen)) s.albumSeen = [];
+    if (!s.playLog || typeof s.playLog !== 'object') s.playLog = {};
+    if (!Number.isInteger(s.quest) || s.quest < 0) s.quest = 0;
     if (raw.quest !== undefined && !raw.contentVersion) {
       // Saved before chapters 4–5 existed: a finished game carries on with the new chapters
       // (step 39 was the old ending and is now the first balloon step).

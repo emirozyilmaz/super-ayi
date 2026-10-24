@@ -586,7 +586,7 @@ function addStream(ctx) {
   // Rail collision so the bear can't walk through the handrails.
   [-1, 1].forEach((s) => {
     ctx.obstacles.push({
-      box: true, x: 8, z: 1.3 * s, hw: 1.95, hd: 0.16, r: 0.2,
+      box: true, x: 8, z: 1.3 * s, hw: 1.95, hd: 0.16, r: 0.2, aboveWater: true,
     });
   });
   return tex;
@@ -861,8 +861,9 @@ export function buildWorld(scene, models) {
   // Berry bushes and the two bounce-mushrooms stand in matching pairs either side of the carpet / pond.
   [[25, 3.3], [35.4, 3.3], [36.5, -5], [61.5, -5]].forEach(([x, z]) => {
     const a = prop('bush_berries', 1.05, x, z, 0.2);
-    obstacles.push({ x, z, r: 0.55 });
-    items.push({ mesh: a.root, kind: 'bush', word: null, x, y: 0, z, r: 1.1, alive: true, actor: a, baseY: 0, dropping: false, vy: 0, respawn: 0, cool: 0 });
+    const obstacle = { x, z, r: 0.55 };
+    obstacles.push(obstacle);
+    items.push({ mesh: a.root, kind: 'bush', word: null, x, y: 0, z, r: 1.1, alive: true, actor: a, baseY: 0, dropping: false, vy: 0, respawn: 0, cool: 0, obstacle });
   });
 
   [[25, -3.4], [35.4, -3.4]].forEach(([x, z]) => {
@@ -1520,7 +1521,8 @@ export function tickWorld(world, dt, time) {
     if (!it.alive && it.respawn && time > it.respawn) {
       it.alive = true;
       it.mesh.visible = true;
-      if (it.kind === 'fruit') it.y = it.baseY;
+      if (it.kind === 'fruit') { it.y = it.baseY; it.dropping = false; it.vy = 0; }
+      if (it.obstacle) it.obstacle.off = false;
       if (it.kind === 'mushroom' && it.baseScale) it.mesh.scale.setScalar(it.baseScale);
     }
   });

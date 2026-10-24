@@ -161,6 +161,18 @@ export const LINES = {
   album: ['My sticker book!', 'Çıkartma albümüm!'],
   'new-sticker': ['A new sticker!', 'Yeni bir çıkartma!'],
   'listen-find': ['Listen and find!', 'Dinle ve bul!'],
+  // Speaking practice ("your turn").
+  'your-turn': ['Your turn! Say it!', 'Sıra sende! Söyle bakalım!'],
+  'well-said': ['Well said!', 'Çok güzel söyledin!'],
+  'say-again': ['A little louder!', 'Biraz daha yüksek sesle!'],
+  'listen-you': ['Listen to you!', 'Bak, bu senin sesin!'],
+  // Word of the day.
+  'word-day': ['Find the word of the day!', 'Günün kelimesini bul!'],
+  'hunt-done': ['You found them all! Hooray!', 'Hepsini buldun! Yaşasın!'],
+  // Play time and profiles.
+  'almost-time': ['Two more minutes!', 'İki dakika kaldı!'],
+  'break-time': ['Time for a break! See you soon!', 'Mola zamanı! Sonra görüşürüz!'],
+  'welcome-back': ['Welcome back!', 'Tekrar hoş geldin!'],
 };
 
 /** The lesson word a line is about ("find-red" → "red"), or null. */

@@ -33,7 +33,7 @@
 
   #gateA { width: 90px; font: inherit; font-size: 24px; font-weight: 800; padding: 6px 10px; border: 3px solid var(--gold); border-radius: 12px; text-align: center; }
   #gateA.bad { animation: shake .35s; border-color: var(--coral); }
-  #load, #menu, #pause, #parent, #gate, #shop, #choose, #finale, #album {
+  #load, #menu, #pause, #parent, #gate, #shop, #choose, #finale, #album, #rest, #speak {
     position: fixed; inset: 0; z-index: 40;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 14px; padding: 20px;
@@ -54,6 +54,13 @@
   }
   .play:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--coral-d); }
   .fine { color: #fff; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  .title-card {
+    display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 18px 34px 16px;
+    background: rgba(70, 120, 160, .28); border: 2px solid rgba(255,255,255,.45); border-radius: 36px;
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); box-shadow: 0 18px 50px rgba(30,60,90,.25);
+    max-width: 94vw;
+  }
+  .title-card h1 { text-shadow: 0 3px 0 #e07a2f, 0 6px 18px rgba(30,40,60,.45); }
 
   #hud { position: fixed; top: calc(10px + env(safe-area-inset-top)); left: 0; right: 0; z-index: 20;
     display: flex; justify-content: space-between; align-items: flex-start; padding: 0 12px; pointer-events: none; }
@@ -98,7 +105,7 @@
     #hud { padding: 0 8px; gap: 8px; }
     #hudRight { flex-wrap: wrap; justify-content: flex-end; gap: 5px; max-width: 210px; }
     .pill { padding: 4px 8px; font-size: 13px; }
-    .icon { width: 38px; height: 38px; font-size: 17px; border-radius: 12px; }
+    .icon { width: 44px; height: 44px; font-size: 18px; border-radius: 12px; }
     #misIcons .ico { width: 46px; height: 46px; }
   }
 
@@ -223,6 +230,88 @@
   #floaty.go { animation: up 1.15s ease-out forwards; }
   @keyframes up { to { opacity: 0; transform: translateX(-50%) translateY(-70px); } }
   .legend { font-size: 13px; color: #8d6e63; font-weight: 700; }
+
+  /* Every panel scrolls instead of being cut off on short (landscape phone) screens. */
+  .panel { max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px); overflow: auto; }
+  /* Big enough to tap for small fingers. */
+  .ghost, #shopClose { min-height: 44px; font-size: 17px; }
+  .album-tab, #parentTabs button { min-height: 44px; }
+
+  /* Profile picker (menu) */
+  #kidPick { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .kid-card {
+    border: 4px solid transparent; border-radius: 22px; background: rgba(255,255,255,.88); padding: 8px 14px 6px;
+    display: flex; flex-direction: column; align-items: center; min-width: 92px; box-shadow: 0 4px 0 rgba(0,0,0,.08);
+  }
+  .kid-card span { font-size: 40px; line-height: 1.1; }
+  .kid-card b { font-size: 15px; color: var(--ink); }
+  .kid-card small { color: #8d6e63; font-weight: 800; }
+  .kid-card.on { border-color: var(--coral); background: #fff; transform: scale(1.06); }
+
+  /* Word of the day chip (under the mission card) */
+  #huntChip {
+    position: absolute; left: 12px; top: calc(100% + 8px); border: 3px solid #ffd54f; border-radius: 999px;
+    background: var(--cream); display: flex; align-items: center; gap: 4px; padding: 2px 10px 2px 6px; min-height: 44px;
+    font-weight: 900; color: var(--ink); box-shadow: 0 3px 8px rgba(0,0,0,.12); pointer-events: auto;
+  }
+  #huntChip i { width: 34px; height: 34px; display: block; }
+  #huntChip i svg { width: 100%; height: 100%; display: block; }
+  #huntChip.done { border-color: var(--leaf); opacity: .8; }
+  #huntChip.nudge { animation: wiggle .7s; }
+
+  /* Family panel */
+  .family { width: min(760px, 96vw); align-items: stretch; }
+  .family-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  #parentTabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  #parentTabs button { border: 0; border-radius: 999px; padding: 6px 14px; background: #fff; font-weight: 800; color: #8d6e63; box-shadow: 0 3px 0 #eadfd2; }
+  #parentTabs button.on { background: var(--leaf); color: #fff; box-shadow: 0 3px 0 #1f7a40; }
+  .ptab { display: flex; flex-direction: column; gap: 8px; }
+  .ptab h3 { font-size: 16px; margin-top: 6px; color: var(--ink); }
+  .psum { font-weight: 900; color: var(--ink); }
+  #weekChart { display: flex; align-items: flex-end; gap: 8px; height: 150px; padding: 8px 4px 0; background: #fff; border-radius: 14px; }
+  #weekChart .bar { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 3px; }
+  #weekChart .bar i { width: 70%; min-height: 3px; background: #a5d6a7; border-radius: 8px 8px 3px 3px; }
+  #weekChart .bar.today i { background: var(--leaf); }
+  #weekChart .bar-val { font-size: 12px; font-weight: 900; color: #8d6e63; }
+  #weekChart .bar-day { font-size: 12px; font-weight: 800; color: #8d6e63; padding-bottom: 4px; }
+  .mini-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .mini-sticker { display: flex; align-items: center; gap: 4px; background: #fff; border-radius: 12px; padding: 4px 8px; font-weight: 800; }
+  .mini-sticker i { width: 26px; height: 26px; display: block; }
+  .mini-sticker i svg { width: 100%; height: 100%; display: block; }
+  .mini-sticker small { color: #e53935; }
+  .slider { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-weight: 800; background: #fff; border-radius: 12px; padding: 6px 12px; }
+  .slider input { width: min(260px, 50vw); accent-color: var(--coral); }
+  .radios { display: flex; flex-direction: column; gap: 6px; background: #fff; border-radius: 12px; padding: 8px 12px; font-weight: 700; }
+  .radios label { display: flex; gap: 8px; align-items: center; min-height: 32px; }
+  #limitSel { font: inherit; font-weight: 800; padding: 8px 10px; border-radius: 12px; border: 3px solid var(--gold); background: #fff; min-height: 44px; }
+  .ghost.danger { color: #c62828; }
+  #kidList { display: flex; flex-direction: column; gap: 8px; }
+  .kid-row { display: flex; align-items: center; gap: 8px; background: #fff; border-radius: 14px; padding: 6px 10px; flex-wrap: wrap; }
+  .kid-row.current { outline: 3px solid var(--leaf); }
+  .kid-ava { font-size: 30px; width: 52px; height: 52px; border-radius: 50%; border: 3px solid #ffe0b2; background: #fff8ef; }
+  .kid-name { flex: 1; min-width: 120px; font: inherit; font-weight: 800; padding: 8px 10px; border-radius: 10px; border: 2px solid #eadfd2; min-height: 44px; }
+  .kid-prog { font-weight: 900; color: #8d6e63; }
+  .kid-now { color: var(--leaf); white-space: nowrap; padding: 0 6px; }
+  .family > #btnParentClose { align-self: center; min-width: 200px; }
+
+  /* Break screen */
+  .rest-panel { background: #283a5c; color: #fff; }
+  .rest-panel h2 { color: #fff; }
+  .rest-art { font-size: 56px; display: flex; align-items: flex-end; gap: 6px; }
+  .rest-art span { font-size: 72px; animation: bob 3s ease-in-out infinite; }
+  .rest-art b { font-size: 34px; animation: bob 2s ease-in-out infinite; }
+  .fine-dark { color: #dfe7ff; font-weight: 700; text-align: center; }
+
+  /* Speaking practice */
+  #speak { z-index: 45; }
+  .speak-panel { width: min(420px, 92vw); }
+  .speak-icon { width: 120px; height: 120px; }
+  .speak-icon svg { width: 100%; height: 100%; display: block; }
+  .speak-word { font-size: 34px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; color: var(--ink); }
+  .speak-mic { position: relative; width: 96px; height: 96px; display: flex; align-items: center; justify-content: center; }
+  .speak-mic i { position: absolute; inset: 0; border-radius: 50%; background: rgba(239,108,58,.25); transition: transform .08s; }
+  .speak-mic span { position: relative; font-size: 46px; }
+  .speak-hint { font-size: 20px; font-weight: 900; color: var(--coral); min-height: 26px; }
 
   /* Sticker album */
   #btnAlbum { position: relative; }
@@ -376,10 +465,13 @@
 </div>
 
 <div id="menu" class="hidden">
-  <div class="bear-mark">🐻</div>
-  <h1>SÜPER AYI<span>İngilizce Macerası</span></h1>
-  <button id="btnPlay" class="play" type="button">OYNA</button>
-  <p class="fine">Zıpla, topla, arkadaşını kurtar</p>
+  <div class="title-card">
+    <div class="bear-mark">🐻</div>
+    <h1>SÜPER AYI<span>İngilizce Macerası</span></h1>
+    <div id="kidPick" aria-label="Kim oynuyor?"></div>
+    <button id="btnPlay" class="play" type="button">OYNA</button>
+    <p class="fine">Zıpla, topla, arkadaşını kurtar</p>
+  </div>
 </div>
 
 <div id="hud" class="hidden">
@@ -388,6 +480,7 @@
     <div id="misWord" lang="en"></div>
     <span id="misEar"><svg viewBox="0 0 100 100"><path d="M14 38 H32 L54 18 V82 L32 62 H14Z"/><path d="M66 34 Q76 50 66 66" stroke-width="8" fill="none"/></svg></span>
   </div>
+  <button id="huntChip" class="hidden" type="button" title="Günün kelimesi"><span>🔎</span><i id="huntIcon"></i><b id="huntCount">0/3</b></button>
   <div id="hudRight">
     <div class="pill">🪙 <span id="hudCoins">0</span></div>
     <div class="pill">⭐ <span id="hudStars">0/6</span></div>
@@ -485,20 +578,106 @@
 </div>
 
 <div id="parent" class="hidden dim">
-  <div class="panel">
-    <h2>Aile paneli</h2>
-    <p class="legend">Duyuldu · Bulundu · İlk seferde bildi · Sonra hatırladı<br>EN: iki kez üst üste ilk seferde bildi, Türkçe çeviri artık kendiliğinden çalmıyor</p>
-    <div id="parentGrid"></div>
-    <p id="offlineInfo" class="legend"></p>
-    <label class="row"><input id="togTr" type="checkbox" checked> Türkçe ses</label>
-    <label class="row"><input id="togSfx" type="checkbox" checked> Oyun sesleri</label>
-    <button id="btnReset" class="ghost" type="button">İlerlemeyi sıfırla</button>
+  <div class="panel family">
+    <div class="family-head">
+      <h2>Aile paneli</h2>
+      <span id="parentWho" class="pill"></span>
+    </div>
+    <div id="parentTabs">
+      <button type="button" data-tab="progress">📊 İlerleme</button>
+      <button type="button" data-tab="week">📅 Bu hafta</button>
+      <button type="button" data-tab="settings">⚙️ Ayarlar</button>
+      <button type="button" data-tab="kids">👧 Çocuklar</button>
+    </div>
+    <section id="ptab_progress" class="ptab">
+      <p id="progressSum" class="psum"></p>
+      <p class="legend">Duyuldu · Bulundu · İlk seferde bildi · Sonra hatırladı · EN: Türkçe çeviri artık kendiliğinden çalmıyor (iki kez üst üste ilk seferde bildi)</p>
+      <div id="parentGrid"></div>
+    </section>
+    <section id="ptab_week" class="ptab hidden">
+      <p id="weekSum" class="psum"></p>
+      <div id="weekChart"></div>
+      <h3>Bu hafta kazanılan çıkartmalar</h3>
+      <div id="weekLearned" class="mini-row"></div>
+      <h3>En çok zorlandığı kelimeler</h3>
+      <div id="weekHard" class="mini-row"></div>
+    </section>
+    <section id="ptab_settings" class="ptab hidden">
+      <h3>Ses</h3>
+      <label class="slider">🎵 Müzik <input id="vol_music" type="range" min="0" max="100" step="5"></label>
+      <label class="slider">🔔 Oyun sesleri <input id="vol_sfx" type="range" min="0" max="100" step="5"></label>
+      <label class="slider">🗣️ Konuşma <input id="vol_voice" type="range" min="0" max="100" step="5"></label>
+      <label class="row"><input id="togTr" type="checkbox" checked> Türkçe çeviri (öğrenilen kelimelerde kendiliğinden azalır)</label>
+      <h3>Konuşma pratiği (“Sıra sende!”)</h3>
+      <div class="radios">
+        <label><input type="radio" name="speakMode" value="mic"> 🎤 Mikrofonla (sesini kaydedip geri çalar)</label>
+        <label><input type="radio" name="speakMode" value="echo"> 🗣️ Mikrofonsuz (tekrar etmesi için bekler)</label>
+        <label><input type="radio" name="speakMode" value="off"> Kapalı</label>
+      </div>
+      <p id="micNote" class="legend"></p>
+      <h3>Günlük oyun süresi</h3>
+      <select id="limitSel">
+        <option value="0">Sınırsız</option>
+        <option value="10">10 dakika</option>
+        <option value="15">15 dakika</option>
+        <option value="20">20 dakika</option>
+        <option value="30">30 dakika</option>
+        <option value="45">45 dakika</option>
+        <option value="60">60 dakika</option>
+      </select>
+      <p id="limitNote" class="legend"></p>
+      <h3>Çevrimdışı</h3>
+      <p id="offlineInfo" class="legend"></p>
+      <button id="btnReset" class="ghost danger" type="button">Bu çocuğun ilerlemesini sıfırla</button>
+      <p class="legend" id="appVersion"></p>
+    </section>
+    <section id="ptab_kids" class="ptab hidden">
+      <p class="legend">Her çocuğun ilerlemesi ayrı tutulur. Simgeye dokununca değişir.</p>
+      <div id="kidList"></div>
+      <div id="kidNew" class="kid-row new">
+        <button type="button" id="kidNewAva" class="kid-ava">🐰</button>
+        <input id="kidName" class="kid-name" maxlength="16" placeholder="Yeni çocuğun adı">
+        <button type="button" id="kidAdd" class="play small">＋ Ekle</button>
+      </div>
+      <p id="kidFull" class="legend hidden">En fazla 4 çocuk eklenebilir.</p>
+    </section>
     <button id="btnParentClose" class="play" type="button">Kapat</button>
+  </div>
+</div>
+
+<div id="rest" class="hidden dim">
+  <div class="panel rest-panel">
+    <div class="rest-art">🌙<span>🐻</span><b>💤</b></div>
+    <h2>Mola zamanı!</h2>
+    <p class="fine-dark">Bugünlük oyun süresi doldu. Ayıcık biraz dinleniyor.</p>
+    <button id="restParent" class="ghost" type="button">👪 Ebeveyn: 10 dakika daha</button>
+  </div>
+</div>
+
+<div id="speak" class="hidden dim">
+  <div class="panel speak-panel">
+    <div id="speakIcon" class="speak-icon"></div>
+    <div id="speakWord" class="speak-word" lang="en"></div>
+    <div class="speak-mic"><i id="speakMeter"></i><span id="speakStage">👂</span></div>
+    <p id="speakHint" class="speak-hint"></p>
+    <button id="speakSkip" class="ghost" type="button">Geç ▶</button>
   </div>
 </div>
 
 <div id="floaty" class="hidden"></div>
 
+<script>
+  // Import maps need Safari 16.4+ / Chrome 89+. Older browsers would sit on the loading screen.
+  (function () {
+    var ok = window.HTMLScriptElement && HTMLScriptElement.supports && HTMLScriptElement.supports('importmap');
+    function tooOld() {
+      var t = document.getElementById('loadText');
+      if (t) t.innerHTML = 'Bu tarayıcı oyun için çok eski.<br>Lütfen güncel Chrome ya da Safari (iPadOS 16.4 ve üstü) kullanın.';
+    }
+    if (!ok) tooOld();
+    else setTimeout(function () { if (!window.__gameReady) { var t = document.getElementById('loadText'); if (t) t.textContent = 'Yükleniyor… (uzun sürerse sayfayı yenileyin)'; } }, 25000);
+  })();
+</script>
 <script type="importmap">
 {
   "imports": {

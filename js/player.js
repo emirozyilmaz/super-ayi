@@ -17,6 +17,11 @@ function waterAt(world, x, z) {
 
 const KEY = { l: 0, r: 0, u: 0, d: 0 };
 
+/** Forget held keys (window lost focus, game paused): nothing walks on by itself afterwards. */
+export function releaseKeys() {
+  KEY.l = 0; KEY.r = 0; KEY.u = 0; KEY.d = 0;
+}
+
 export function bindKeys() {
   addEventListener('keydown', (e) => {
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
@@ -63,7 +68,7 @@ export function updatePlayer(world, dt) {
   if (IN.camDrag) G.camYaw += IN.camDrag * dt * 1.6;
   if (mag > 0.12 || IN.camDrag || IN.jumpBuf > 0) G.lastInput = G.time;
   const look = G.camLook;
-  if (look && !locked && !PL.climbing && mag < 0.12 && Math.hypot(look.x - PL.x, look.z - PL.z) > 2) {
+  if (look && !locked && !PL.climbing && !PL.flying && !PL.swinging && mag < 0.12 && Math.hypot(look.x - PL.x, look.z - PL.z) > 2) {
     const forced = G.time < G.camLookUntil;
     if (forced || G.time - G.lastInput > 6) {
       const want = Math.atan2(-(look.x - PL.x), -(look.z - PL.z));
@@ -95,9 +100,21 @@ export function updatePlayer(world, dt) {
   if (!PL.climbing && nearVine && iy > 0.55 && !locked && PL.y < vine.top - 0.2) {
     PL.climbing = vine;
     PL.vy = 0;
+    PL.vx = 0; PL.vz = 0;
+    PL.diving = false; PL.stomping = false; PL.sliding = 0; PL.launched = false;
   }
 
-  if (PL.climbing && !locked) {
+  if (PL.climbing && locked) {
+    // Frozen on the vine while a dialog or card is open.
+    PL.vy = 0;
+    return false;
+  }
+  if (PL.climbing && PL.y <= 0.05 && (iy < -0.3 || Math.abs(ix) > 0.6)) {
+    // At the foot of the vine, pulling back or sideways simply steps off it.
+    PL.climbing = null;
+    PL.onG = true;
+  }
+  if (PL.climbing) {
     PL.x += (vine.x - 0.42 - PL.x) * Math.min(1, dt * 8);
     PL.z += (vine.z - PL.z) * Math.min(1, dt * 8);
     PL.y += iy * 2.6 * dt;
@@ -184,6 +201,7 @@ export function updatePlayer(world, dt) {
   }
 
   for (const o of world.obstacles) {
+    if (o.off || (o.aboveWater && PL.y < -0.2)) continue;
     if (o.box) {
       const nx = Math.max(o.x - o.hw, Math.min(PL.x, o.x + o.hw));
       const nz = Math.max(o.z - o.hd, Math.min(PL.z, o.z + o.hd));
@@ -218,7 +236,7 @@ export function updatePlayer(world, dt) {
 
   const prevY = PL.y;
   const wet = waterAt(world, PL.x, PL.z);
-  let gy = 0;
+  let gy = !wet && world.groundHeightAt ? Math.min(0, world.groundHeightAt(PL.x, PL.z)) : 0;
   let onPlatform = false;
   let onRamp = false;
   for (const p of world.platforms) {
@@ -257,6 +275,8 @@ export function updatePlayer(world, dt) {
   const inWaterVol = !!(wet && !onPlatform && PL.y <= surface + 0.45);
 
   if (inWaterVol) {
+    // Land moves don't carry on in the water (no 7 m/s torpedo, no 20 % crawl after a stomp).
+    PL.diving = false; PL.stomping = false; PL.sliding = 0; PL.launched = false;
     // Super Bear Adventure water:
     //  • Joystick / WASD / Arrows swim in 4 directions on the horizontal plane.
     //  • B button (🤿 Dive / Shift / C / F) dives underwater from the surface or swims deeper.
@@ -405,9 +425,11 @@ export function updatePlayer(world, dt) {
       const wasDive = PL.diving;
       PL.diving = false;
       PL.stomping = false;
+      PL.launched = false;
       if (wasStomp) {
         // Stomp Boost bounce!
         PL.vy = 5.8;
+        PL.launched = true;
         PL.onG = false;
         PL.jumps = 1;
         PL.squash = 1.35;
@@ -426,6 +448,7 @@ export function updatePlayer(world, dt) {
       for (const tr of world.trampolines) {
         if (Math.hypot(PL.x - tr.x, PL.z - tr.z) < tr.r && PL.y <= 0.85 && PL.vy <= 1) {
           PL.vy = 11.2;
+          PL.launched = true;
           PL.y = 0.65;
           PL.onG = false;
           PL.diving = false;
@@ -454,7 +477,9 @@ export function updatePlayer(world, dt) {
         PL.vy = 6.2; PL.jumps = 2; PL.diving = false; IN.jumpBuf = 0; sfx.jump();
       }
     }
-    if (!IN.jumpHeld && PL.vy > 2.8 && !PL.diving) PL.vy = 2.8;
+    // Letting go of jump early makes a short hop (not for bounces and launches).
+    if (!IN.jumpHeld && PL.vy > 2.8 && !PL.diving && !PL.launched) PL.vy = 2.8;
+    if (PL.vy <= 0) PL.launched = false;
   }
 
   if (PL.swimming && !PL.wasSwim) {
